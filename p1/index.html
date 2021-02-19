@@ -131,6 +131,7 @@
 
             ///This variable is a buffer that holds the geometry
             var triangleVertexPositionBuffer;
+            // var triangleVertexColorBuffer; //colors
 
             //We will Generate the geometry with this function
             function initBuffers() {
@@ -142,15 +143,12 @@
                             0.0,  1.0,  0.0,
                             -1.0, -1.0,  0.0,
                             1.0, -1.0,  0.0,
-                            3.0, 0.0, 0.0,
-                            2.0, 2.0, 0.0,
-                            4.0, 2.0, 0.0
                 ];
 
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
                 triangleVertexPositionBuffer.itemSize = 3;
-                triangleVertexPositionBuffer.numItems = 6;
+                triangleVertexPositionBuffer.numItems = 3;
             }
 
             //Here we connect the uniform matrices 
@@ -180,6 +178,13 @@
 
                 gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 
                     triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+                // //Now working on the Color data
+                // gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+
+                // //set color attribute in vertex shader	
+                // gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 
+                //     triangleVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
                 setMatrixUniforms();
 
