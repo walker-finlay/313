@@ -96,8 +96,10 @@ function initShaders() {
 var triangleVertexPositionBuffer;
 var triangleVertexColorBuffer; //colors
 
-var triangleVertexPositionBuffer;	var triangleVertexColorBuffer;
-var triLinePositionBuffer;		var triLineColorBuffer;
+var triangleVertexPositionBuffer;	
+var triangleVertexColorBuffer;
+var triLinePositionBuffer;		
+var triLineColorBuffer;
 
 //We will Generate the geometry with this function
 function initBuffers() {
@@ -105,9 +107,9 @@ function initBuffers() {
     triangleVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
     var vertices = [
-                0.0,  1.0,  0.0,
+                 0.0,  1.0,  0.0,
                 -1.0, -1.0,  0.0,
-                1.0, -1.0,  0.0,
+                 1.0, -1.0,  0.0,
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     triangleVertexPositionBuffer.itemSize = 3;
@@ -116,27 +118,30 @@ function initBuffers() {
     //this holds the colors
     triangleVertexColorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
-    var colors = [ 1.0,  0.0,  0.0, 1,
-                0.0,  1.0,  0.0, 1,
-                0.0,  0.0,  1.0, 1];
+    var colors = [  1.0,  0.0,  0.0, 1,
+                    0.0,  1.0,  0.0, 1,
+                    0.0,  0.0,  1.0, 1];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
     triangleVertexColorBuffer.itemSize = 4;
     triangleVertexColorBuffer.numItems = 3;
 
+    // Axes
     triLinePositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triLinePositionBuffer);
-    vertices = [	0.0,  0.0,  0.0, 1.0,  0.0,  0.0, 
-                    0.0,  0.0,  0.0, 0.0,  1.0,  0.0,
-                    0.0,  0.0,  0.0, 0.0,  0.0,  1.0 ];
+    vertices = [	0.0,  0.0,  0.0,    1.0,  0.0,  0.0, 
+                    0.0,  0.0,  0.0,    0.0,  1.0,  0.0,
+                    0.0,  0.0,  0.0,    0.0,  0.0,  1.0 ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    triLinePositionBuffer.itemSize = 3; triLinePositionBuffer.numItems = 6;
+    triLinePositionBuffer.itemSize = 3; 
+    triLinePositionBuffer.numItems = 6;
     triLineColorBuffer = gl.createBuffer(); 
     gl.bindBuffer(gl.ARRAY_BUFFER, triLineColorBuffer);
     colors = [	0.0,  0.0,  0.0, 1, 1.0,  0.0,  0.0, 1, 
                 0.0,  0.0,  0.0, 1, 0.0,  1.0,  0.0, 1,
                 0.0,  0.0,  0.0, 1, 0.0,  0.0,  1.0, 1 ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-    triLineColorBuffer.itemSize = 4;	triLineColorBuffer.numItems = 6;
+    triLineColorBuffer.itemSize = 4;	
+    triLineColorBuffer.numItems = 6;
 }
 
 //Here we connect the uniform matrices 
@@ -179,9 +184,7 @@ function drawScene() {
     // void gl.drawArrays(mode, first, count);
     gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);   
     
-    glMatrix.mat4.identity(mvMatrix);
-    glMatrix.mat4.translate(mvMatrix, mvMatrix, [-1.0, -1.0, -7.0]);
-
+    // Axes
     gl.bindBuffer(gl.ARRAY_BUFFER, triLinePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 
         triLinePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -190,7 +193,6 @@ function drawScene() {
     gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
         triLineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
         
-    setMatrixUniforms();
     gl.drawArrays(gl.LINES, 0, triLinePositionBuffer.numItems);
 }
 
