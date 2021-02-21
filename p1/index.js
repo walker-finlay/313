@@ -101,6 +101,10 @@ var triangleVertexColorBuffer;
 var triLinePositionBuffer;		
 var triLineColorBuffer;
 
+let lineStripBuffer;
+
+let lineLoopBuffer;
+
 //We will Generate the geometry with this function
 function initBuffers() {
     //this holds the positions
@@ -128,20 +132,42 @@ function initBuffers() {
     // Axes
     triLinePositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triLinePositionBuffer);
-    vertices = [	0.0,  0.0,  0.0,    1.0,  0.0,  0.0, 
-                    0.0,  0.0,  0.0,    0.0,  1.0,  0.0,
-                    0.0,  0.0,  0.0,    0.0,  0.0,  1.0 ];
+    vertices = [	-10.0,  0.0,  0.0,    10.0,  0.0,  0.0,     // x
+                    0.0,  -10.0,  0.0,    0.0,  10.0,  0.0,     // y
+                    0.0,  0.0,  -10.0,    0.0,  0.0,  10.0 ];   // z
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     triLinePositionBuffer.itemSize = 3; 
     triLinePositionBuffer.numItems = 6;
     triLineColorBuffer = gl.createBuffer(); 
     gl.bindBuffer(gl.ARRAY_BUFFER, triLineColorBuffer);
-    colors = [	0.0,  0.0,  0.0, 1, 1.0,  0.0,  0.0, 1, 
-                0.0,  0.0,  0.0, 1, 0.0,  1.0,  0.0, 1,
-                0.0,  0.0,  0.0, 1, 0.0,  0.0,  1.0, 1 ];
+    colors = [	1.0,  0.0,  0.0, 1, 1.0,  0.0,  0.0, 1, 
+                0.0,  1.0,  0.0, 1, 0.0,  1.0,  0.0, 1,
+                0.0,  0.0,  1.0, 1, 0.0,  0.0,  1.0, 1 ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
     triLineColorBuffer.itemSize = 4;	
     triLineColorBuffer.numItems = 6;
+
+    // Line strip
+    lineStripBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineStripBuffer);
+    vertices = [
+        -2.0,    1.0,    -2.0,
+        -3.0,   -1.0,    -2.0,
+        -1.0,   -1.0,    -2.0,];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    lineStripBuffer.itemSize = 3;
+    lineStripBuffer.numItems = 3;
+
+    // Line loop
+    lineLoopBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineLoopBuffer);
+    vertices = [
+        2.0,    1.0,    -2.0,
+        1.0,   -1.0,    -2.0,
+        3.0,   -1.0,    -2.0,];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    lineLoopBuffer.itemSize = 3;
+    lineLoopBuffer.numItems = 3;
 }
 
 //Here we connect the uniform matrices 
@@ -192,8 +218,21 @@ function drawScene() {
     gl.bindBuffer(gl.ARRAY_BUFFER, triLineColorBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
         triLineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        
+
     gl.drawArrays(gl.LINES, 0, triLinePositionBuffer.numItems);
+
+    // Line strip
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineStripBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        lineStripBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINE_STRIP, 0, lineStripBuffer.numItems);
+
+    // Line Loop
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineLoopBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        lineLoopBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINE_LOOP, 0, lineLoopBuffer.numItems);
+
 }
 
 function webGLStart() {
