@@ -60,7 +60,6 @@ function initShaders() {
     var fragmentShader = getShader(gl, "shader-fs");
     var vertexShader = getShader(gl, "shader-vs");
 
-
     //Create the program, then attach and link 
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
@@ -79,7 +78,6 @@ function initShaders() {
 
     gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-
     //associate vertexColorAttribute with //internal shader variable aVertexColor
     shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
 
@@ -93,12 +91,10 @@ function initShaders() {
     gl.getUniformLocation(shaderProgram, "uMVMatrix");
 }
 
-///This variable is a buffer that holds the geometry
+// Buffers for geometry & color
 var triangleVertexPositionBuffer;
-var triangleVertexColorBuffer; //colors
-
-var triangleVertexPositionBuffer;	
 var triangleVertexColorBuffer;
+
 var triLinePositionBuffer;		
 var triLineColorBuffer;
 
@@ -108,7 +104,7 @@ let lineLoopBuffer;
 
 //We will Generate the geometry with this function
 function initBuffers() {
-    //this holds the positions
+    // Triangle ---------------------------------------------------------------
     triangleVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
     var vertices = [
@@ -130,7 +126,7 @@ function initBuffers() {
     triangleVertexColorBuffer.itemSize = 4;
     triangleVertexColorBuffer.numItems = 3;
 
-    // Axes
+    // Axes -------------------------------------------------------------------
     triLinePositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triLinePositionBuffer);
     vertices = [	-10.0,  0.0,  0.0,    10.0,  0.0,  0.0,     // x
@@ -148,7 +144,7 @@ function initBuffers() {
     triLineColorBuffer.itemSize = 4;	
     triLineColorBuffer.numItems = 6;
 
-    // Line strip
+    // Line strip -------------------------------------------------------------
     lineStripBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, lineStripBuffer);
     vertices = [
@@ -159,7 +155,7 @@ function initBuffers() {
     lineStripBuffer.itemSize = 3;
     lineStripBuffer.numItems = 3;
 
-    // Line loop
+    // Line loop --------------------------------------------------------------
     lineLoopBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, lineLoopBuffer);
     vertices = [
@@ -182,40 +178,35 @@ var mvMatrix = glMatrix.mat4.create();
 var pMatrix = glMatrix.mat4.create();
 
 function drawScene() {
+    // Viewport stuff
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    //allocate a perspective matrix in pMatrix
-    // (static) perspective(out, fovy, aspect, near, far) --> {mat4}
+    // Projection matrices
     glMatrix.mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
-    //allocate an identity matrix in mvMatrix
     glMatrix.mat4.identity(mvMatrix);
     // glMatrix.mat4.fromYRotation(mvMatrix, pi/4);
     // glMatrix.mat4.rotateX(mvMatrix, mvMatrix, pi/4);
     // glMatrix.mat4.rotateY(mvMatrix, mvMatrix, pi/4);
-    //Add a translation into mvMatrix
     glMatrix.mat4.translate(mvMatrix, mvMatrix, [0, 0, -10]);
-    //////////////Load in Triangle Vertices
-    gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
 
+    setMatrixUniforms();
+
+    // Triangle ---------------------------------------------------------------
+    gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 
         triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    //Now working on the Color data
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
-
     //set color attribute in vertex shader	
     gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 
         triangleVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    setMatrixUniforms();
-
     // void gl.drawArrays(mode, first, count);
     gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);   
     
-    // Axes
+    // Axes -------------------------------------------------------------------
     gl.bindBuffer(gl.ARRAY_BUFFER, triLinePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 
         triLinePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -226,18 +217,17 @@ function drawScene() {
 
     gl.drawArrays(gl.LINES, 0, triLinePositionBuffer.numItems);
 
-    // Line strip
+    // Line strip -------------------------------------------------------------
     gl.bindBuffer(gl.ARRAY_BUFFER, lineStripBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
         lineStripBuffer.itemSize, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.LINE_STRIP, 0, lineStripBuffer.numItems);
 
-    // Line Loop
+    // Line Loop --------------------------------------------------------------
     gl.bindBuffer(gl.ARRAY_BUFFER, lineLoopBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
         lineLoopBuffer.itemSize, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.LINE_LOOP, 0, lineLoopBuffer.numItems);
-
 }
 
 function webGLStart() {
