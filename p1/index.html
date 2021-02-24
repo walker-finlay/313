@@ -3,7 +3,10 @@
     <head>
         <title>Walker Finlay - p1</title>
 
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+
         <script type="text/javascript" src="../lib/gl-matrix-3.3.0.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
         <script id="shader-fs" type="x-shader/x-fragment">
             ////////////////////////////////////////////////////////
@@ -59,7 +62,7 @@
         <script type="text/javascript" src="index.js"></script>
     </head>
 
-    <body onload="webGLStart();">
+    <body onload="getMyData();">
     
         <canvas id="webGLcanvas" style="border: none"></canvas>
     
