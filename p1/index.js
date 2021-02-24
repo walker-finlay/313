@@ -1,4 +1,5 @@
 var gl;
+let pi = 3.14159265359;
 
 function initGL(canvas) {
     try {
@@ -186,12 +187,16 @@ function drawScene() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     //allocate a perspective matrix in pMatrix
+    // (static) perspective(out, fovy, aspect, near, far) --> {mat4}
     glMatrix.mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
     //allocate an identity matrix in mvMatrix
     glMatrix.mat4.identity(mvMatrix);
+    // glMatrix.mat4.fromYRotation(mvMatrix, pi/4);
+    // glMatrix.mat4.rotateX(mvMatrix, mvMatrix, pi/4);
+    // glMatrix.mat4.rotateY(mvMatrix, mvMatrix, pi/4);
     //Add a translation into mvMatrix
-    glMatrix.mat4.translate(mvMatrix, mvMatrix, [0, 0, -7.0]);
+    glMatrix.mat4.translate(mvMatrix, mvMatrix, [0, 0, -10]);
     //////////////Load in Triangle Vertices
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
 
@@ -249,7 +254,7 @@ function webGLStart() {
     initBuffers();
 
     //Set the background color to opaque black
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.0, 0.0, 0.2, 1.0);
 
     //Render only pixels in front of the others.
     gl.enable(gl.DEPTH_TEST);
