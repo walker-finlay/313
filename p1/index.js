@@ -7,9 +7,9 @@ let polarColorData;
 let lineBlastPositionData;
 let lineBlastColorData;
 
-function getMyData() {
+async function getMyData() {
     // Polar curve stuff ------------------------------------------------------
-    $.getJSON('points.json', data => {
+    let getPP = $.getJSON('points.json', data => {
         polarPointData = data;
     })
     .done(() => { 
@@ -18,7 +18,7 @@ function getMyData() {
     .fail(() => {
         console.log("Error loading points")
     });
-    $.getJSON('colors.json', data => {
+    let getPC = $.getJSON('colors.json', data => {
         polarColorData = data;
     })
     .done(() => {
@@ -28,7 +28,7 @@ function getMyData() {
         console.log("Error loading colors")
     });
     // Line blast stuff -------------------------------------------------------
-    $.getJSON('line_points.json', data => {
+    let getLBP = $.getJSON('line_points.json', data => {
         lineBlastPositionData = data;
     })
     .done(() => { 
@@ -37,16 +37,17 @@ function getMyData() {
     .fail(() => {
         console.log("Error loading points")
     });
-    $.getJSON('line_colors.json', data => {
+    let getLBC = $.getJSON('line_colors.json', data => {
         lineBlastColorData = data;
     })
     .done(() => {
         console.log("Blast colors loaded")
-        webGLStart(); // FIXME: There's probably a better way to do this async stuff
     })
     .fail(() => {
         console.log("Error loading colors")
     });
+    await Promise.all([getPP, getPC, getLBP, getLBC])
+    webGLStart(); // There's probably a better way to do this async stuff
 }
 
 function initGL(canvas) {
