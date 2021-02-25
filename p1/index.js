@@ -4,7 +4,11 @@ let pi = 3.14159265359;
 let polarPointData;
 let polarColorData;
 
+let lineBlastPositionData;
+let lineBlastColorData;
+
 function getMyData() {
+    // Polar curve stuff ------------------------------------------------------
     $.getJSON('points.json', data => {
         polarPointData = data;
     })
@@ -14,13 +18,31 @@ function getMyData() {
     .fail(() => {
         console.log("Error loading points")
     });
-
     $.getJSON('colors.json', data => {
         polarColorData = data;
     })
     .done(() => {
         console.log("Colors loaded")
-        webGLStart(); // FIXME: There's probably a better way to do this
+    })
+    .fail(() => {
+        console.log("Error loading colors")
+    });
+    // Line blast stuff -------------------------------------------------------
+    $.getJSON('line_points.json', data => {
+        lineBlastPositionData = data;
+    })
+    .done(() => { 
+        console.log(`Blast points loaded`)
+    })
+    .fail(() => {
+        console.log("Error loading points")
+    });
+    $.getJSON('line_colors.json', data => {
+        lineBlastColorData = data;
+    })
+    .done(() => {
+        console.log("Blast colors loaded")
+        webGLStart(); // FIXME: There's probably a better way to do this async stuff
     })
     .fail(() => {
         console.log("Error loading colors")
@@ -131,15 +153,21 @@ let lineLoopBuffer;
 let polarPointBuffer;
 let polarColorBuffer;
 
+let pointPositionBuffer;
+let pointColorBuffer;
+
+let lineBlastPositionBuffer;
+let lineBlastColorBuffer;
+
 //We will Generate the geometry with this function
 function initBuffers() {
     // Triangle ---------------------------------------------------------------
     triangleVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
     var vertices = [
-                 0.0,  1.0,  2.0,
-                -1.0, -1.0,  2.0,
-                 1.0, -1.0,  2.0,
+                 0.0,  1.0,  -4.0,
+                -1.0, -1.0,  -4.0,
+                 1.0, -1.0,  -4.0,
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     triangleVertexPositionBuffer.itemSize = 3;
@@ -159,7 +187,7 @@ function initBuffers() {
     triLinePositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, triLinePositionBuffer);
     vertices = [	-10.0,  0.0,  0.0,    10.0,  0.0,  0.0,     // x
-                    0.0,  -0.75,  0.0,    0.0,   0.0,  0.0,     // y
+                    0.0,  -0.5,  0.0,    0.0,   0.0,  0.0,     // y
                     0.0,  0.0,  -10.0,    0.0,  0.0,  10.0 ];   // z
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     triLinePositionBuffer.itemSize = 3; 
@@ -195,7 +223,7 @@ function initBuffers() {
     lineLoopBuffer.itemSize = 3;
     lineLoopBuffer.numItems = 3;
 
-    // Polar stuff ------------------------------------------------------------
+    // Polar fan stuff --------------------------------------------------------
     polarPointBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, polarPointBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(polarPointData), gl.STATIC_DRAW);
@@ -206,6 +234,34 @@ function initBuffers() {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(polarColorData), gl.STATIC_DRAW);
     polarColorBuffer.itemSize = 3;
     polarColorBuffer.numItems = 1001;
+
+    // Points -----------------------------------------------------------------
+    pointPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointPositionBuffer);
+    vertices = [1.0, 1.0, 1.0];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    pointPositionBuffer.itemSize = 3;
+    pointPositionBuffer.numItems = 1;
+
+    pointColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointColorBuffer);
+    colors = [1.0, 1.0, 1.0, 1.0];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    pointColorBuffer.itemSize = 4;
+    pointColorBuffer.numItems = 1;
+
+    // Line blast stuff
+    lineBlastPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBlastPositionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineBlastPositionData), gl.STATIC_DRAW);
+    lineBlastPositionBuffer.itemSize = 3;
+    lineBlastPositionBuffer.numItems = 1000;
+
+    lineBlastColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBlastColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineBlastColorData), gl.STATIC_DRAW);
+    lineBlastColorBuffer.itemSize = 4;
+    lineBlastColorBuffer.numItems = 1000;
 }
 
 //Here we connect the uniform matrices 
@@ -227,10 +283,10 @@ function drawScene() {
     glMatrix.mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
     // glMatrix.mat4.identity(mvMatrix);
-    glMatrix.mat4.fromYRotation(mvMatrix, pi/6);
-    glMatrix.mat4.rotateX(mvMatrix, mvMatrix, pi/6);
+    glMatrix.mat4.fromYRotation(mvMatrix, pi/10);
+    glMatrix.mat4.rotateX(mvMatrix, mvMatrix, pi/10);
     // glMatrix.mat4.rotateY(mvMatrix, mvMatrix, pi/4);
-    glMatrix.mat4.translate(mvMatrix, mvMatrix, [3, -3.5, -5]);
+    glMatrix.mat4.translate(mvMatrix, mvMatrix, [1, -2, -2]);
 
     setMatrixUniforms();
 
@@ -280,6 +336,28 @@ function drawScene() {
         polarColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
     gl.drawArrays(gl.TRIANGLE_FAN, 0, polarPointBuffer.numItems);
+
+    // Points -----------------------------------------------------------------
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointPositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        pointPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
+        pointColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.POINTS, 0, pointPositionBuffer.numItems);
+
+    // Line blast -------------------------------------------------------------
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBlastPositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        lineBlastPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBlastColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
+        lineBlastColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.LINES, 0, lineBlastPositionBuffer.numItems);
 }
 
 function webGLStart() {
