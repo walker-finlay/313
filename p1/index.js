@@ -3,15 +3,14 @@ import * as mat4 from "../lib/mat4.js"
 
 let pi = 3.14159265359;
 
-window.allTheStuff = allTheStuff
-async function allTheStuff() {
-
+window.allTheStuff = async function allTheStuff() {
 // Polar curve stuff -------------------------------------------
 let getPP = await tools.getMyData('points.json');
 let getPC = await tools.getMyData('colors.json');
 // Line blast stuff --------------------------------------------
 let getLBP = await tools.getMyData('line_points.json');
 let getLBC = await tools.getMyData('line_colors.json');
+
 // ~ Start WebGL ..............................................................
 var canvas = document.getElementById("webGLcanvas");
 canvas.width = window.innerWidth-20;
@@ -62,6 +61,7 @@ mat4.translate(mvMatrix, mvMatrix, [1, -2, -2]);
 
 tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
 
+// TODO: Make this a function?
 gl.bindBuffer(gl.ARRAY_BUFFER, polarPointBuffer);
 gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
     polarPointBuffer.itemSize, gl.FLOAT, false, 0, 0);
