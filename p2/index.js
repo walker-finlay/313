@@ -3,84 +3,127 @@ import * as mat4 from "../lib/mat4.js"
 
 let pi = 3.14159265359;
 
+
 window.AllTheStuff = async function AllTheStuff() {
-// Polar curve stuff -------------------------------------------
-let getPP = await tools.getMyData('points.json');
-let getPC = await tools.getMyData('colors.json');
-// Line blast stuff --------------------------------------------
-let getLBP = await tools.getMyData('line_points.json');
-let getLBC = await tools.getMyData('line_colors.json');
+    
+// Generate ya sphere
+var sRadius = 4; 
+var slices = 25; 
+var stacks = 12; 
+var sVertices = []; 
+let sColors = [];   // TODO: Delete me 
+var count =0;
+
+for (let t = 0 ; t < stacks ; t++ ){ // stacks are ELEVATION so they count theta
+	var phi1 = ( (t)/stacks )*Math.PI;
+	var phi2 = ( (t+1)/stacks )*Math.PI;
+    for (let p = 0 ; p < slices +1 ; p++ ){ // slices are ORANGE SLICES so 					
+        var theta = ( (p)/slices )*2*Math.PI ; 
+        var xVal = sRadius * Math.cos(theta) * Math.sin(phi1);
+        var yVal = sRadius * Math.sin(theta) * Math.sin(phi1);
+        var zVal = sRadius * Math.cos(phi1);
+        sVertices = sVertices.concat([ xVal, yVal, zVal ]);
+        sColors = sColors.concat([1,1,1,1]);
+        count++;
+        var xVal = sRadius * Math.cos(theta) * Math.sin(phi2);
+        var yVal = sRadius * Math.sin(theta) * Math.sin(phi2);
+        var zVal = sRadius * Math.cos(phi2);
+        sVertices = sVertices.concat([ xVal, yVal, zVal ]);
+        sColors = sColors.concat([1,1,1,1]);
+        count++;
+    }
+}        
 
 // ~ Start WebGL ..............................................................
 var canvas = document.getElementById("webGLcanvas");
 canvas.width = window.innerWidth-20;
 canvas.height = window.innerHeight-20;
 //Create the GL viewport
-let gl = tools.initGL(canvas);
+var gl = tools.initGL(canvas);
 ///Load the shaders and buffers into the GPU
 let shaderProgram;
 shaderProgram = tools.initShaders(shaderProgram);
 
-// ###########################################################
-// #################### All the points #######################
-// ###########################################################
-// Polar fan
-let polarPointBuffer = tools.initBuffer(getPP, gl.STATIC_DRAW, 3, 1001);
-let polarColorBuffer = tools.initBuffer(getPC, gl.STATIC_DRAW, 3, 1001);
-// Line blast
-let starBurstPositionBuffer = tools.initBuffer(getLBP, gl.STATIC_DRAW, 3, 2000);
-let starBurstColorBuffer = tools.initBuffer(getLBC, gl.STATIC_DRAW, 4, 2000);
-// ###########################################################
-// ######################### (end) ###########################
-// ###########################################################
+// initBuffer
+let spherePositionBuffer = tools.initBuffer(sVertices, gl.STATIC_DRAW, 3, (2*(slices+1)*stacks));
+let sphereColorBuffer = tools.initBuffer(sColors, gl.STATIC_DRAW, 4, (2*(slices+1)*stacks));
 
 //Set the background color to opaque black
-gl.clearColor(0.3, 0.0, 0.4, 1.0);
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
 //Render only pixels in front of the others.
 gl.enable(gl.DEPTH_TEST);
-//render the scene
-console.log("Drawing");
 
-// ###########################################################
-// ######################## Draw it! #########################
-// ###########################################################
+// Outside drawScene()
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 
-// Viewport stuff
-gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
 // Projection matrices
 mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+mat4.identity(mvMatrix);
+mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
 
-// mat4.identity(mvMatrix);
-mat4.fromYRotation(mvMatrix, pi/10);
-mat4.rotateX(mvMatrix, mvMatrix, pi/10);
-mat4.translate(mvMatrix, mvMatrix, [1, -2, -2]);
+function drawScene() {
+    // Viewport stuff
+    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+    mat4.rotate(mvMatrix, mvMatrix, degToRad(xRot), [1, 1, 1]);
 
-// TODO: Make this a function?
-gl.bindBuffer(gl.ARRAY_BUFFER, polarPointBuffer);
-gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-    polarPointBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, spherePositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        spherePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-gl.bindBuffer(gl.ARRAY_BUFFER, polarColorBuffer);
-gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
-    polarColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-gl.drawArrays(gl.TRIANGLE_FAN, 0, polarPointBuffer.numItems);
+    gl.bindBuffer(gl.ARRAY_BUFFER, sphereColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
+        sphereColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-gl.bindBuffer(gl.ARRAY_BUFFER, starBurstPositionBuffer);
-gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-    starBurstPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+    gl.drawArrays(gl.LINES, 0, spherePositionBuffer.numItems);
+}
 
-gl.bindBuffer(gl.ARRAY_BUFFER, starBurstColorBuffer);
-gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
-    starBurstColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-gl.drawArrays(gl.LINES, 0, starBurstColorBuffer.numItems);
 
-// ###########################################################
-// ######################### (end) ###########################
-// ###########################################################
+// Animation stuff
+
+function degToRad(degrees) {
+    return degrees * Math.PI / 180;
+}    
+
+function resize(canvas){
+	var dispWidth = window.innerWidth-20;	  //browser width
+	var dispHeight = (window.innerHeight)-20;  //browser height
+
+    //check if the canvas is not the same size
+	if (canvas.width != dispWidth || canvas.height != dispHeight) {
+        canvas.width = dispWidth;   // FIXME: This doesn't work, it just scales the image
+		canvas.height = dispHeight; // Might need to initGL again?
+		gl.viewport(0,0,gl.canvas.width, gl.canvas.height);
+		gl.viewportWidth = canvas.width;
+		gl.viewportHeight = canvas.height;
+	}
+}
+
+var lastTime = 0;	var xRot = 0;		var xSpeed = 60;
+
+function animate() {
+    var timeNow = new Date().getTime();
+    if (lastTime != 0) {
+        var elapsed = timeNow - lastTime;
+        //update the rotation to the current time.
+        xRot = (xSpeed * elapsed) / 1000.0;
+        if( xRot > 360 ){
+            xRot -= 360;
+        }
+    }
+    lastTime = timeNow;
+}
+
+function tick() {
+    requestAnimFrame(tick); 
+    resize(canvas);
+    drawScene();
+    animate();
+}
+
+tick()
+// drawScene();
 }
