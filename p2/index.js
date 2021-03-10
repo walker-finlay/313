@@ -1,18 +1,15 @@
 import * as tools from "../lib/tools.js"
 import * as mat4 from "../lib/mat4.js"
 
-let pi = 3.14159265359;
-
-
 window.AllTheStuff = async function AllTheStuff() {
     
 // Generate ya sphere
-var sRadius = 4; 
+var sRadius = 1; 
 var slices = 25; 
 var stacks = 12; 
 var sVertices = []; 
 let sColors = [];   // TODO: Delete me 
-var count =0;
+var count = 0;
 
 for (let t = 0 ; t < stacks ; t++ ){ // stacks are ELEVATION so they count theta
 	var phi1 = ( (t)/stacks )*Math.PI;
@@ -23,16 +20,27 @@ for (let t = 0 ; t < stacks ; t++ ){ // stacks are ELEVATION so they count theta
         var yVal = sRadius * Math.sin(theta) * Math.sin(phi1);
         var zVal = sRadius * Math.cos(phi1);
         sVertices = sVertices.concat([ xVal, yVal, zVal ]);
-        sColors = sColors.concat([1,1,1,1]);
+        sColors = sColors.concat([Math.random(),Math.random(),Math.random(),1]);
         count++;
         var xVal = sRadius * Math.cos(theta) * Math.sin(phi2);
         var yVal = sRadius * Math.sin(theta) * Math.sin(phi2);
         var zVal = sRadius * Math.cos(phi2);
         sVertices = sVertices.concat([ xVal, yVal, zVal ]);
-        sColors = sColors.concat([1,1,1,1]);
+        sColors = sColors.concat([Math.random(),Math.random(),Math.random(),1]);
         count++;
     }
 }        
+
+let xMin = -5;
+let xMax = 5;
+let yMin = -5;
+let yMax = 5; 
+
+let squarePositions = [   xMin, yMax, 0,    xMax, yMax, 0,
+                        xMax, yMin, 0,    xMin, yMin, 0];
+
+let squareColors = [  1, 0, 0, 1,     1, 0, 0, 1,
+                    0, 1, 0, 1,     0, 1, 0, 1];
 
 // ~ Start WebGL ..............................................................
 var canvas = document.getElementById("webGLcanvas");
@@ -48,6 +56,9 @@ shaderProgram = tools.initShaders(shaderProgram);
 let spherePositionBuffer = tools.initBuffer(sVertices, gl.STATIC_DRAW, 3, (2*(slices+1)*stacks));
 let sphereColorBuffer = tools.initBuffer(sColors, gl.STATIC_DRAW, 4, (2*(slices+1)*stacks));
 
+let squarePositionBuffer = tools.initBuffer(squarePositions, gl.STATIC_DRAW, 3, 4);
+let squareColorBuffer = tools.initBuffer(squareColors, gl.STATIC_DRAW, 4, 4);
+
 //Set the background color to opaque black
 gl.clearColor(0.0, 0.0, 0.0, 1.0);
 //Render only pixels in front of the others.
@@ -62,12 +73,41 @@ mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 mat4.identity(mvMatrix);
 mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
 
+let sphereCoords = [(Math.random()*10)-5, (Math.random()*10)-5, 0];
+
 function drawScene() {
     // Viewport stuff
+    // Tell webGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    // Clear the canvas and the depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    mat4.rotate(mvMatrix, mvMatrix, degToRad(xRot), [1, 1, 1]);
+    // Square stuff ---------------------------------------
+    mat4.identity(mvMatrix);
+    mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
+    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, squarePositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        squarePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
+        squareColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.LINE_LOOP, 0, squarePositionBuffer.numItems);
+    
+    // Sphere stuff ---------------------------------------
+    mat4.identity(mvMatrix);
+    mat4.translate(mvMatrix, mvMatrix, [sphereCoords[0]+vx, sphereCoords[1]+vy, -15]);
+    mat4.rotate(mvMatrix, mvMatrix, degToRad(xRot), [1, 0, 1]);
+    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+
+    mat4.getTranslation(sphereCoords, mvMatrix);
+
+    if (sphereCoords[0] >= xMax || sphereCoords[0] <= xMin) {vx *= -1}
+    if (sphereCoords[1] >= yMax || sphereCoords[1] <= yMin) {vy *= -1}
+
 
     gl.bindBuffer(gl.ARRAY_BUFFER, spherePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
@@ -77,7 +117,6 @@ function drawScene() {
     gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
         sphereColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
     gl.drawArrays(gl.LINES, 0, spherePositionBuffer.numItems);
 }
 
@@ -102,20 +141,27 @@ function resize(canvas){
 	}
 }
 
-var lastTime = 0;	var xRot = 0;		var xSpeed = 60;
+var lastTime = 0;	
+var xRot = 0;		
+var xSpeed = 30;
+let vx = Math.random()*0.25;
+let vy = Math.random()*0.25;
 
 function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
+
         //update the rotation to the current time.
-        xRot = (xSpeed * elapsed) / 1000.0;
+        xRot += (xSpeed * elapsed) / 1000.0;
         if( xRot > 360 ){
             xRot -= 360;
         }
     }
     lastTime = timeNow;
 }
+
+// function 
 
 function tick() {
     requestAnimFrame(tick); 
