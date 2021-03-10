@@ -8,7 +8,7 @@ var sRadius = 1;
 var slices = 25; 
 var stacks = 12; 
 var sVertices = []; 
-let sColors = [];   // TODO: Delete me 
+let sColors = [];
 var count = 0;
 let drawSphere = true;
 
@@ -173,7 +173,6 @@ let ixMin = document.getElementById('xMin');
 let ixMax = document.getElementById('xMax');
 let iyMin = document.getElementById('yMin');
 let iyMax = document.getElementById('yMax');
-let fields = document.getElementsByClassName('resize');
 
 ixMin.value = xMin;
 ixMax.value = xMax;
