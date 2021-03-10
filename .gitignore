@@ -1,6 +1,4 @@
 deploy
 logs.txt
 gl-matrix/
-lib/
-!lib/tools.js
 messin/
