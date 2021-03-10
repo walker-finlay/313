@@ -1,0 +1,24 @@
+#sphere_coords_box {
+    border-radius: 5px;
+    position: fixed;
+    bottom: 50px;
+    left: 50px;
+    background-color: white;
+    opacity: 0.75;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-bottom: 15px;
+}
+
+input {
+    resize: none;
+    margin: 5px;
+}
+
+/* Make text unselectable just for fun */
+p {
+    -webkit-user-select: none; /* Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
+}

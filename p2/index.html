@@ -4,6 +4,7 @@
         <title>Walker Finlay - p2</title>
 
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="stylesheet" href="index.css">
 
         <!-- <script type="text/javascript" src="../lib/gl-matrix-3.3.0.min.js"></script> -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -66,6 +67,17 @@
     <body onload="AllTheStuff()">
     
         <canvas id="webGLcanvas" style="border: none"></canvas>
+        <div id="sphere_coords_box">
+            <p id="sphere_coords">sum'</p>
+            <label for="xMin">xMin:</label>
+            <input id="xMin" class="resize" rows="1" cols="8"></input><br>
+            <label for="xMax">xMax:</label>
+            <input id="xMax" class="resize" rows="1" cols="8"></input><br>
+            <label for="yMin">yMin:</label>
+            <input id="yMin" class="resize" rows="1" cols="8"></input><br>
+            <label for="yMax">yMax:</label>
+            <input id="yMax" class="resize" rows="1" cols="8"></input>
+        </div>
     
     </body>
 </html>

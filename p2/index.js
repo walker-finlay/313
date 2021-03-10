@@ -10,6 +10,7 @@ var stacks = 12;
 var sVertices = []; 
 let sColors = [];   // TODO: Delete me 
 var count = 0;
+let drawSphere = true;
 
 for (let t = 0 ; t < stacks ; t++ ){ // stacks are ELEVATION so they count theta
 	var phi1 = ( (t)/stacks )*Math.PI;
@@ -38,7 +39,6 @@ let yMax = 5;
 
 let squarePositions = [   xMin, yMax, 0,    xMax, yMax, 0,
                         xMax, yMin, 0,    xMin, yMin, 0];
-
 let squareColors = [  1, 0, 0, 1,     1, 0, 0, 1,
                     0, 1, 0, 1,     0, 1, 0, 1];
 
@@ -76,7 +76,6 @@ mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
 let sphereCoords = [(Math.random()*10)-5, (Math.random()*10)-5, 0];
 
 function drawScene() {
-    // Viewport stuff
     // Tell webGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     // Clear the canvas and the depth buffer
@@ -86,15 +85,13 @@ function drawScene() {
     mat4.identity(mvMatrix);
     mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
     tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
-
+    
     gl.bindBuffer(gl.ARRAY_BUFFER, squarePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
         squarePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
     gl.bindBuffer(gl.ARRAY_BUFFER, squareColorBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
         squareColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
     gl.drawArrays(gl.LINE_LOOP, 0, squarePositionBuffer.numItems);
     
     // Sphere stuff ---------------------------------------
@@ -103,21 +100,21 @@ function drawScene() {
     mat4.rotate(mvMatrix, mvMatrix, degToRad(xRot), [1, 0, 1]);
     tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
 
+    // Bounce calculations //
     mat4.getTranslation(sphereCoords, mvMatrix);
-
     if (sphereCoords[0] >= xMax || sphereCoords[0] <= xMin) {vx *= -1}
     if (sphereCoords[1] >= yMax || sphereCoords[1] <= yMin) {vy *= -1}
+    // Bounce calculations //
 
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, spherePositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-        spherePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, sphereColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
-        sphereColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-    gl.drawArrays(gl.LINES, 0, spherePositionBuffer.numItems);
+    if (drawSphere) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, spherePositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+            spherePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, sphereColorBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
+            sphereColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.LINES, 0, spherePositionBuffer.numItems);
+    }
 }
 
 
@@ -144,8 +141,8 @@ function resize(canvas){
 var lastTime = 0;	
 var xRot = 0;		
 var xSpeed = 30;
-let vx = Math.random()*0.25;
-let vy = Math.random()*0.25;
+let vx = Math.random()*0.15;
+let vy = Math.random()*0.15;
 
 function animate() {
     var timeNow = new Date().getTime();
@@ -161,15 +158,71 @@ function animate() {
     lastTime = timeNow;
 }
 
-// function 
-
 function tick() {
     requestAnimFrame(tick); 
     resize(canvas);
     drawScene();
     animate();
+
+    // Interactive stuff 
+    document.getElementById('sphere_coords').innerHTML =
+        `${tools.roundDown(sphereCoords[0])}, ${tools.roundDown(sphereCoords[1])}`
 }
 
+let ixMin = document.getElementById('xMin');
+let ixMax = document.getElementById('xMax');
+let iyMin = document.getElementById('yMin');
+let iyMax = document.getElementById('yMax');
+let fields = document.getElementsByClassName('resize');
+
+ixMin.value = xMin;
+ixMax.value = xMax;
+iyMin.value = yMin;
+iyMax.value = yMax;
+
+function resizeSquare() {
+    squarePositions = [   xMin, yMax, 0,    xMax, yMax, 0,
+                          xMax, yMin, 0,    xMin, yMin, 0];
+    squarePositionBuffer = tools.initBuffer(squarePositions, gl.STATIC_DRAW, 3, 4);
+    sphereCoords = [(xMin+xMax)/2, (yMin+yMax)/2, 0];
+    console.log('sum');
+}
+
+ixMin.addEventListener('blur', e => {
+    xMin = parseInt(e.target.value);
+    if (xMin > xMax) {
+        drawSphere = false;
+    } else {drawSphere = true;}
+    resizeSquare();
+});
+iyMin.addEventListener('blur', e => {
+    yMin = parseInt(e.target.value);
+    if (yMin > yMax) {
+        drawSphere = false;
+    } else {drawSphere = true;}
+    resizeSquare();
+});
+ixMax.addEventListener('blur', e => {
+    xMax = parseInt(e.target.value);
+    if (xMax < xMin) {
+        drawSphere = false;
+    } else {drawSphere = true;}
+    resizeSquare();
+});
+iyMax.addEventListener('blur', e => {
+    yMax = parseInt(e.target.value);
+    if (yMax < yMin) {
+        drawSphere = false;
+    } else {drawSphere = true;}
+    resizeSquare();
+});
+
+document.addEventListener('keyup', e => {
+    if (e.code == 'Enter') {
+        e.preventDefault();
+        e.target.blur()
+    }
+});
+
 tick()
-// drawScene();
 }
