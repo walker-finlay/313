@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Walker Finlay - p2</title>
+
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="stylesheet" href="index.css">
+
+        <!-- <script type="text/javascript" src="../lib/gl-matrix-3.3.0.min.js"></script> -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+        <script id="shader-fs" type="x-shader/x-fragment">
+            ////////////////////////////////////////////////////////
+            ///FRAGMENT SHADER START
+            ////////////////////////////////////////////////////////
+            //sets the precision of vColor
+            precision mediump float;
+            
+            //The variable labeled varying is input
+            //vColor is interpolated over vertices
+            varying vec4 vColor;            
+            
+                void main(void) {
+                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+
+                    //assign the pixel color to the
+                    //interpolated color
+                    gl_FragColor = vColor;            
+                }
+            ////////////////////////////////////////////////////////
+            ///FRAGMENT SHADER END
+            ////////////////////////////////////////////////////////
+        </script>
+
+        <script id="shader-vs" type="x-shader/x-vertex">
+            //////////////////////////////////////////////////////
+            ///VERTEX SHADER START
+            //////////////////////////////////////////////////////
+                ///Attributes are inputs provided for each vertex,
+                ///different for each vertex in the rendering call
+            ///input: vertex position
+                attribute vec3 aVertexPosition;	
+                //vertex color
+                attribute vec4 aVertexColor;
+
+                //Uniforms are inputs provided for ALL Vertices, 
+                //the same for all vertices in any rendering call
+                uniform mat4 uMVMatrix;			//?
+                uniform mat4 uPMatrix;			//?
+
+                varying lowp vec4 vColor;
+            
+                void main(void) {
+                    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+                    //pass vertex color to fragment shader
+                    vColor = aVertexColor;
+                    gl_PointSize = 10.0;
+                }
+            //////////////////////////////////////////////////////
+            ///VERTEX SHADER END
+            //////////////////////////////////////////////////////
+        </script>
+        <script type="text/javascript" src="../lib/webgl-utils.js"></script>    
+        <script type="module" src="index.js"></script>
+    </head>
+
+    <body onload="AllTheStuff()">
+        <canvas id="webGLcanvas" style="border: none"></canvas>
+    </body>
+</html>
