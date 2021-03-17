@@ -2,11 +2,15 @@ import * as tools from "../lib/tools.js"
 import * as mat4 from "../lib/mat4.js"
 
 window.AllTheStuff = async function AllTheStuff() {
+/**
+ * All the webGL stuff
+ */
 
-// Methods --------------------------------------
 var lastTime = 0;	
 var xRot = 0;		
 var xSpeed = 30;
+
+// Methods --------------------------------------
 function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
@@ -40,21 +44,29 @@ shaderProgram = tools.initShaders(shaderProgram);
  
 
 // Points ---------------------------------------
-let axisPositions = [1, 0, 0,       0, 0, 0,
-                     0, 1, 0,       0, 0, 0, 
-                     0, 0, 1,       0, 0, 0,];
-let axisColors = [1, 0, 0, 1,       1, 0, 0, 1,
-                  0, 1, 0, 1,       0, 1, 0, 1,
-                  0, 0, 1, 1,       0, 0, 1, 1];
-
 let sphere = new tools.glSphere(1);
 
-// Initbuffers ----------------------------------
-let axisPositionBuffer = tools.initBuffer(axisPositions, 3, 6);
-let axisColorBuffer = tools.initBuffer(axisColors, 4, 6);
+// Textures -------------------------------------
+var worldTexture = tools.initTexture("/p3/images/worldMap.gif");
 
+// texture coords
+let stacks = sphere.stacks;
+let slices = sphere.slices;
+var textureCoords = [];
+for(let t = 0 ; t < stacks ; t++ )	{
+	var phi1 = ( (t)/stacks );
+	var phi2 = ( (t+1)/stacks );
+	for(let p = 0 ; p < slices+1 ; p++ ){
+		var theta = 1 - ( (p)/slices );
+		textureCoords = textureCoords.concat([theta, phi1]);
+		textureCoords = textureCoords.concat([theta, phi2]);
+	}
+}
+
+// Initbuffers ----------------------------------
 let spherePositionBuffer = tools.initBuffer(sphere.sVertices, 3, sphere.numItems);
-let sphereColorBuffer = tools.initBuffer(sphere.sColors, 4, sphere.numItems);
+let sphereVertexTextureCoordBuffer = tools.initBuffer(textureCoords, 2, stacks*(slices+1)*2);
+// let sphereColorBuffer = tools.initBuffer(sphere.sColors, 4, sphere.numItems);
 
 // Drawing --------------------------------------
 //Set the background color to opaque black
@@ -68,7 +80,10 @@ var pMatrix = mat4.create();
 
 mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 mat4.identity(mvMatrix);
-mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
+mat4.translate(mvMatrix, mvMatrix, [0, 0, -5]);
+mat4.rotate(mvMatrix, mvMatrix, Math.PI/1.4, [1,0,0]);
+mat4.rotate(mvMatrix, mvMatrix, Math.PI, [0,0,1]);
+
 
 function drawScene() {
     // Tell webGL how to convert from clip space to pixels
@@ -76,34 +91,22 @@ function drawScene() {
     // Clear the canvas and the depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Axes
-    gl.bindBuffer(gl.ARRAY_BUFFER, axisPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-        axisPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, axisColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
-        axisColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
-
-    gl.drawArrays(gl.LINES, 0, axisPositionBuffer.numItems);
-
-    // Sphere
+    // Sphere //
     gl.bindBuffer(gl.ARRAY_BUFFER, spherePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-        spherePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-    // gl.bindBuffer(gl.ARRAY_BUFFER, sphereColorBuffer);
-    // gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
-    //     sphereColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        spherePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);    
     
-    // Set the color to white for the whole sphere
-    gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
-    gl.vertexAttrib4f(shaderProgram.vertexColorAttribute,1,1,1,1);
-    gl.drawArrays(gl.LINES, 0, spherePositionBuffer.numItems);
-    gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+    gl.bindBuffer(gl.ARRAY_BUFFER, sphereVertexTextureCoordBuffer);
+    gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, sphereVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, worldTexture);
+    gl.uniform1i(shaderProgram.samplerUniform, 0);
+
+    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, spherePositionBuffer.numItems);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 }
-
-
 
 // ~ End webGLStart() .........................................................
 tick()

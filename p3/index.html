@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Walker Finlay - p2</title>
+        <title>Walker Finlay - p3</title>
 
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
         <link rel="stylesheet" href="index.css">
@@ -18,14 +18,15 @@
             
             //The variable labeled varying is input
             //vColor is interpolated over vertices
-            varying vec4 vColor;            
-            
+            // varying vec4 vColor;            
+            varying vec2 vTextureCoord;
+            uniform sampler2D uSampler;
                 void main(void) {
-                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-
+                    // gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
                     //assign the pixel color to the
                     //interpolated color
-                    gl_FragColor = vColor;            
+                    // gl_FragColor = vColor;            
                 }
             ////////////////////////////////////////////////////////
             ///FRAGMENT SHADER END
@@ -40,20 +41,24 @@
                 ///different for each vertex in the rendering call
             ///input: vertex position
                 attribute vec3 aVertexPosition;	
+                attribute vec2 aTextureCoord;
+            
                 //vertex color
-                attribute vec4 aVertexColor;
+                // attribute vec4 aVertexColor;
 
                 //Uniforms are inputs provided for ALL Vertices, 
                 //the same for all vertices in any rendering call
                 uniform mat4 uMVMatrix;			//?
                 uniform mat4 uPMatrix;			//?
 
-                varying lowp vec4 vColor;
+                // varying lowp vec4 vColor;
+                varying vec2 vTextureCoord;
             
                 void main(void) {
                     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
                     //pass vertex color to fragment shader
-                    vColor = aVertexColor;
+                    // vColor = aVertexColor;
+                    vTextureCoord = aTextureCoord;
                     gl_PointSize = 10.0;
                 }
             //////////////////////////////////////////////////////
