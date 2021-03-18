@@ -8,7 +8,6 @@
 
         <!-- <script type="text/javascript" src="../lib/gl-matrix-3.3.0.min.js"></script> -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
         <script id="shader-fs" type="x-shader/x-fragment">
             ////////////////////////////////////////////////////////
             ///FRAGMENT SHADER START
@@ -48,8 +47,8 @@
 
                 //Uniforms are inputs provided for ALL Vertices, 
                 //the same for all vertices in any rendering call
-                uniform mat4 uMVMatrix;			//?
-                uniform mat4 uPMatrix;			//?
+                uniform mat4 uMVMatrix; // FIXME: Shouldn't these be attributes?
+                uniform mat4 uPMatrix;
 
                 // varying lowp vec4 vColor;
                 varying vec2 vTextureCoord;
@@ -70,6 +69,12 @@
     </head>
 
     <body onload="AllTheStuff()">
+        <div id="debuginfo">
+            <u>Debug Info</u> <br>
+            Mouse Coords: <span id="mouseCoords"></span> <br>
+            Clicked?: <span id="clickt">false</span> <br>
+            Delta: <span id="delta">0, 0</span>
+        </div>
         <canvas id="webGLcanvas" style="border: none"></canvas>
     </body>
 </html>

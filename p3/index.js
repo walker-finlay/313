@@ -10,6 +10,54 @@ var lastTime = 0;
 var xRot = 0;		
 var xSpeed = 30;
 
+var canvas = document.getElementById("webGLcanvas");
+canvas.width = window.innerWidth-20;
+canvas.height = window.innerHeight-20;
+
+// Mouse event stuff ----------------------------
+let mouseCoords = document.getElementById('mouseCoords');
+let drag_delta = document.getElementById('delta');
+let mouseclick = false;
+let downCoords = [0, 0];
+let rect = canvas.getBoundingClientRect();
+let delta = [0, 0];
+
+let sceneRotate = mat4.create();
+let mouseRotate = mat4.create();
+
+canvas.addEventListener('mousemove', e => {
+    mouseCoords.innerHTML = 
+        `${e.clientX - rect.left}, ${e.clientY - rect.top}`;
+    if (mouseclick) {
+        delta = [
+            (e.clientX-rect.left)-downCoords[0], 
+            (e.clientY-rect.top)-downCoords[1]
+        ];
+        drag_delta.innerHTML = `${delta[0]}, ${delta[1]}`;
+
+        // Rotate the scene
+        mat4.fromYRotation(mouseRotate, tools.degToRad(delta[0]/50));
+        mat4.rotate(mouseRotate, mouseRotate, tools.degToRad(delta[1]/50), [1, 0, 0]);
+        mat4.multiply(sceneRotate, mouseRotate, sceneRotate);
+    }
+});
+canvas.addEventListener('mousedown', e => {
+    mouseclick = true;
+    downCoords = [e.clientX-rect.left, e.clientY-rect.top];
+    clickt.innerHTML = 'true';
+});
+canvas.addEventListener('mouseup', e => {
+    // mat4.identity(sceneRotate);
+    delta = [0, 0];
+    mouseclick = false;
+    clickt.innerHTML = 'false';
+});
+canvas.addEventListener('mouseleave', e => {
+    delta = [0, 0];
+    mouseclick = false;
+    clickt.innerHTML = 'false';
+});
+
 // Methods --------------------------------------
 function animate() {
     var timeNow = new Date().getTime();
@@ -32,10 +80,6 @@ function tick() {
 }
 
 // ~ Start WebGL ..............................................................
-
-var canvas = document.getElementById("webGLcanvas");
-canvas.width = window.innerWidth-20;
-canvas.height = window.innerHeight-20;
 //Create the GL viewport
 var gl = tools.initGL(canvas);
 ///Load the shaders and buffers into the GPU
@@ -44,29 +88,23 @@ shaderProgram = tools.initShaders(shaderProgram);
  
 
 // Points ---------------------------------------
-let sphere = new tools.glSphere(1);
+let sphere = new tools.glSphere(4, true);
+let axPositions =  [1, 0, 0,    0, 0, 0,
+                    0, 1, 0,    0, 0, 0,
+                    0, 0, 1,    0, 0, 0,];
 
-// Textures -------------------------------------
+// Textures & Colors ----------------------------
 var worldTexture = tools.initTexture("/p3/images/worldMap.gif");
-
-// texture coords
-let stacks = sphere.stacks;
-let slices = sphere.slices;
-var textureCoords = [];
-for(let t = 0 ; t < stacks ; t++ )	{
-	var phi1 = ( (t)/stacks );
-	var phi2 = ( (t+1)/stacks );
-	for(let p = 0 ; p < slices+1 ; p++ ){
-		var theta = 1 - ( (p)/slices );
-		textureCoords = textureCoords.concat([theta, phi1]);
-		textureCoords = textureCoords.concat([theta, phi2]);
-	}
-}
+let axColors = [1, 0, 0,    1, 0, 0,
+                0, 1, 0,    0, 1, 0,
+                0, 0, 1,    0, 0, 1,]
 
 // Initbuffers ----------------------------------
 let spherePositionBuffer = tools.initBuffer(sphere.sVertices, 3, sphere.numItems);
-let sphereVertexTextureCoordBuffer = tools.initBuffer(textureCoords, 2, stacks*(slices+1)*2);
-// let sphereColorBuffer = tools.initBuffer(sphere.sColors, 4, sphere.numItems);
+let sphereVertexTextureCoordBuffer = tools.initBuffer(sphere.textureCoords, 2, sphere.stacks*(sphere.slices+1)*2);
+
+let axPositionBuffer = tools.initBuffer(axPositions, 3, 6);
+let axColorBuffer = tools.initBuffer(axColors, 3, 6);
 
 // Drawing --------------------------------------
 //Set the background color to opaque black
@@ -79,11 +117,6 @@ var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 
 mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
-mat4.identity(mvMatrix);
-mat4.translate(mvMatrix, mvMatrix, [0, 0, -5]);
-mat4.rotate(mvMatrix, mvMatrix, Math.PI/1.4, [1,0,0]);
-mat4.rotate(mvMatrix, mvMatrix, Math.PI, [0,0,1]);
-
 
 function drawScene() {
     // Tell webGL how to convert from clip space to pixels
@@ -91,6 +124,12 @@ function drawScene() {
     // Clear the canvas and the depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    mat4.identity(mvMatrix);
+    mat4.translate(mvMatrix, mvMatrix, [0, 0, -15]);
+    mat4.multiply(mvMatrix, mvMatrix, sceneRotate);
+    mat4.rotate(mvMatrix, mvMatrix, Math.PI/2, [1,0,0]);
+    mat4.rotate(mvMatrix, mvMatrix, Math.PI, [0,0,1]);
+    
     // Sphere //
     gl.bindBuffer(gl.ARRAY_BUFFER, spherePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
