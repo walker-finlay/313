@@ -177,6 +177,7 @@ function drawScene() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     // Clear the canvas and the depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    resetMv();
 
     drawSphere(bgPositionBuffer, bgTexture);
     drawSphere(solPositionBuffer, solTexture);
