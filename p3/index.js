@@ -79,8 +79,6 @@ function resetMv() {
     mat4.identity(mvMatrix);
     mat4.translate(mvMatrix, mvMatrix, [0, 0, -55]);
     mat4.multiply(mvMatrix, mvMatrix, sceneRotate);
-    // mat4.rotate(mvMatrix, mvMatrix, Math.PI/2, [1,0,0]);
-    // mat4.rotate(mvMatrix, mvMatrix, Math.PI, [0,0,1]);
     tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
 }
 
@@ -179,6 +177,7 @@ function drawScene() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     // Clear the canvas and the depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    resetMv();
 
     drawSphere(bgPositionBuffer, bgTexture);
     drawSphere(solPositionBuffer, solTexture);
@@ -199,8 +198,9 @@ function drawScene() {
         gl.drawArrays(gl.LINE_LOOP, 0, circlePositionBuffer.numItems);
     }
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
-        1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    // FIXME: Problems here with textures - find a way to undo this
+    // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+    //     1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
     drawOrbit(mercuryOrbitBuffer);
     drawOrbit(venusOrbitBuffer);
     drawOrbit(earthOrbitBuffer);

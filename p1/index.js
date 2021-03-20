@@ -1,4 +1,4 @@
-import * as tools from "../lib/tools.js"
+import * as tools from "../lib/toolsv2.js"
 import * as mat4 from "../lib/mat4.js"
 
 let pi = 3.14159265359;
