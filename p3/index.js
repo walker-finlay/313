@@ -107,6 +107,13 @@ function drawPlanet(p, pBuffer, texture) {
     }
 }
 
+// Circle //
+function drawOrbit(circlePositionBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, circlePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINE_LOOP, 0, circlePositionBuffer.numItems);
+}
+
 // ~ Start WebGL ..............................................................
 // Create the GL viewport
 var gl = tools.initGL(canvas);
@@ -128,16 +135,16 @@ let saturn = new tools.Planet(1.7, 26, Math.random()/60);
 let uranus = new tools.Planet(1, 29, Math.random()/60);
 let neptune = new tools.Planet(1, 32, Math.random()/60);
 // Textures & Colors ----------------------------
-let bgTexture = tools.initTexture('/p3/images/2k_stars.jpg');
-var solTexture = tools.initTexture("/p3/images/2k_sun.jpg");
-let mercuryTexture = tools.initTexture('/p3/images/2k_mercury.jpg');
-let venusTexture = tools.initTexture('/p3/images/2k_venus_surface.jpg');
-let earthTexture = tools.initTexture('/p3/images/2k_earth_daymap.jpg');
-let marsTexture = tools.initTexture('/p3/images/2k_mars.jpg');
-let jupiterTexture = tools.initTexture('/p3/images/2k_jupiter.jpg');
-let saturnTexture = tools.initTexture('/p3/images/2k_saturn.jpg');
-let uranusTexture = tools.initTexture('/p3/images/2k_uranus.jpg');
-let neptuneTexture = tools.initTexture('/p3/images/2k_neptune.jpg');
+let bgTexture = tools.initTexture('images/2k_stars_milky_way.jpg');
+var solTexture = tools.initTexture("images/2k_sun.jpg");
+let mercuryTexture = tools.initTexture('images/2k_mercury.jpg');
+let venusTexture = tools.initTexture('images/2k_venus_surface.jpg');
+let earthTexture = tools.initTexture('images/2k_earth_daymap.jpg');
+let marsTexture = tools.initTexture('images/2k_mars.jpg');
+let jupiterTexture = tools.initTexture('images/2k_jupiter.jpg');
+let saturnTexture = tools.initTexture('images/2k_saturn.jpg');
+let uranusTexture = tools.initTexture('images/2k_uranus.jpg');
+let neptuneTexture = tools.initTexture('images/2k_neptune.jpg');
 // Initbuffers ----------------------------------
 let bgPositionBuffer = tools.initBuffer(bg.sVertices, 3, bg.numItems);
 let solPositionBuffer = tools.initBuffer(sol.sVertices, 3, sol.numItems);
@@ -190,13 +197,6 @@ function drawScene() {
     drawPlanet(saturn, saturnPositionBuffer, saturnTexture);
     drawPlanet(uranus, uranusPositionBuffer, uranusTexture);
     drawPlanet(neptune, neptunePositionBuffer, neptuneTexture);
-
-    // Circle //
-    function drawOrbit(circlePositionBuffer) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, circlePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        gl.drawArrays(gl.LINE_LOOP, 0, circlePositionBuffer.numItems);
-    }
 
     // FIXME: Problems here with textures - find a way to undo this
     // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
