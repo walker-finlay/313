@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import * as tools from "../lib/tools.js"
 import * as mat4 from "../lib/mat4.js"
 
@@ -50,3 +51,8 @@ function drawScene() {
 // ~ End webGLStart() .........................................................
 tick()
 }
+=======
+window.webGLStart = () => {
+    console.log('sip');
+};
+>>>>>>> p4 setup
