@@ -1,4 +1,6 @@
 
+//import BVHtree from './BVHtree001' //import BVHnode from './BVHtree001'
+import * as vec3 from '../lib/vec3.js'
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                         //
 //         ##  ######        ########  ##       ##    ##       ########     ###    ########   ######  ######## ########    //
@@ -11,30 +13,35 @@
 //                                                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+//for use in the renderer
 var fileVertexPosBuffer;
 var fileVertexNrmBuffer;
 var fileVertexTexBuffer;
 var fileVertexColBuffer;
 var fileVertexIndBuffer;
 var modelData = [];
-var modelScale = 40;
+var modelScale = 60;
 
+//for use in analysis
+var vertices = null;
+var faces = null;
+var arrayVertex, arrayNormal, arrayTexture, arrayColor, arrayIndex;
+
+//for use in ray tracing
+var linearizedBVHtree = null;
+var linearizedVecNrmTriAndNodes = null;
+
+
+// PLY object
+function PLY() { this.object; }
 
 // Path to folder where models are stored
 var ModelFolderPath = "models/";
 
 // Number of vertices in PLY file
 var PLY_Vertices = 0;
-
 // Number of faces in PLY file
 var PLY_Faces = 0;
-
-// 11 entries per vertex (x,y,z,nx,ny,nz,r,g,b,u,v)
-var PLY_DataLenght = 11;
-
-var VAO_VertexIndex = 0;
-
 var FaceIndex = 0;
 
 
@@ -74,14 +81,23 @@ function PLY_Face(a, b, c) {
 //                                                                                           888        //
 //                                                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
+let cb;
 var xmlhttp;
-function LoadPLY(filename)
+export default function LoadPLY(filename, callback)
 {
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function(){
 		if (xmlhttp.readyState == XMLHttpRequest.DONE) {
 			if (xmlhttp.status == 200) {
+				cb = callback;
 				loadAsyncPLYfile();
+				
+				//test
+				// outputVertsAndFaces();
+				
+			}
+			if (xmlhttp.status == 404) {
+				console.log("ERROR: <" + filename + ">... not found.");
 			}
 		}
 	}
@@ -91,6 +107,121 @@ function LoadPLY(filename)
 	xmlhttp.open("GET", ModelFolderPath + filename, true);
 	xmlhttp.send();
 }
+
+
+function outputVertsAndFaces()
+{
+	if( vertices.length/3 > maxVerticesInModel){
+		console.log("ERROR: too many vertices in model for BVH tree");
+	}
+	if( faces.length/3 > maxTrianglesInModel){
+		console.log("ERROR: too many faces/triangles in model for BVH tree");
+	}
+
+	//vertices_array.length is three times the length;
+	let vertices_array = [];
+	for( var i = 0; i< vertices.length; i++){
+		vertices_array.push( vertices[i].x );
+		vertices_array.push( vertices[i].y );
+		vertices_array.push( vertices[i].z );
+		//zero value to pack floats into vec4 in shader
+		vertices_array.push( 0.0 );			
+	}
+	//normals_array.length is three times the length;
+	let normals_array = [];
+	for( var i = 0; i< vertices.length; i++){
+		normals_array.push( vertices[i].nx );
+		normals_array.push( vertices[i].ny );
+		normals_array.push( vertices[i].nz );
+		//zero value to pack floats into vec4 in shader
+		normals_array.push( 0.0 );			
+	}
+	
+	//faces.length is three times the length;
+	let faces_array = [];
+	for( var i = 0; i< faces.length; i++){
+		faces_array.push( faces[i].a );
+		faces_array.push( faces[i].b );
+		faces_array.push( faces[i].c );
+		//zero value to pack floats into vec4 in shader
+		faces_array.push( 0.0 );			
+	}
+
+	console.log("vertices: " + vertices_array.length/4 + " faces: " + faces_array.length/4);
+	
+	
+	//construct BVH tree.
+	//note that these arrays are zero packed to lenght 4 per vertex, normal, and face.
+	var bvhTest = new BVHtree(vertices_array, normals_array, faces_array);
+//	var nodeArrayTest = bvhTest.linearize();
+
+	//zero fill the vertices, normals, and faces, after bvh construciton.
+	//zero fill the rest of the vertices, up to maxVerticesInModel.
+	for( var i = 0; i< maxVerticesInModel-vertices.length; i++){
+		vertices_array.push( 0.0 );			
+		vertices_array.push( 0.0 );			
+		vertices_array.push( 0.0 );			
+		vertices_array.push( -1.0 );	//-1 in the fourth position indicates empty vertex.
+	}
+	//zero fill the rest of the normals, up to maxVerticesInModel.
+	for( var i = 0; i< maxVerticesInModel-vertices.length; i++){
+		normals_array.push( 0.0 );			
+		normals_array.push( 0.0 );			
+		normals_array.push( 0.0 );			
+		normals_array.push( -1.0 );	//-1 in the fourth position indicates empty normal.
+	}
+	//zero fill the rest of the faces, up to maxTrianglesInModel.
+	for( var i = 0; i< maxTrianglesInModel-faces.length; i++){
+		faces_array.push( 0.0 );			
+		faces_array.push( 0.0 );			
+		faces_array.push( 0.0 );			
+		faces_array.push( -1.0 );	//-1 in the fourth position indicates empty triangle.
+	}
+	//zero fill the rest of the nodes, up to maxNodesInBVH.
+	for( var i = 0; i< maxNodesInBVH-bvhTest.numNodes; i++){
+		nodeArrayTest.push( 0.0 );			
+		nodeArrayTest.push( 0.0 );			
+		nodeArrayTest.push( 0.0 );			
+		nodeArrayTest.push( -1.0 );		//-1 to indicate empty node
+		for( var j = 0; j<6*4; i++){		//7 total vec4's.
+			nodeArrayTest.push( 0.0 );			
+		}
+	}
+
+
+
+	//var maxTrianglesPerNode = 20;
+	//var maxNodesInBVH = 1000;
+	var maxTrianglesInModel = 1000;
+	var maxVerticesInModel = 1000;
+
+
+	///this is the final linearized tree	
+	linearizedBVHtree = nodeArrayTest;
+	
+	//this is linearized everything.
+	linearizedVecNrmTriAndNodes = [];
+	linearizedVecNrmTriAndNodes.concat(vertices_array);
+	linearizedVecNrmTriAndNodes.concat(normals_array);
+	linearizedVecNrmTriAndNodes.concat(faces_array);
+	linearizedVecNrmTriAndNodes.concat(nodeArrayTest);
+	
+//	return nodeArrayTest;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -103,9 +234,6 @@ function LoadPLY(filename)
 //  888      888____    /            888       "88_-888 888    \_88P   "88___/  888      //
 //                                                                                       //
 ///////////////////////////////////////////////////////////////////////////////////////////
-var vertices = null;
-var faces = null;
-var arrayVertex, arrayNormal, arrayTexture, arrayColor, arrayIndex;
 function loadAsyncPLYfile() {
 	var data = xmlhttp.responseText;		//the downloaded data
 	var lines = data.split("\n");			//the downloaded data split into lines
@@ -162,10 +290,10 @@ function loadAsyncPLYfile() {
 			if (PLY_index < PLY_Vertices) {
 				// Read vertices
 				vertices[PLY_index] = new PLY_Vertex();
-				vertices[PLY_index].x = e[0];		vertices[PLY_index].y = e[1];		vertices[PLY_index].z = e[2];		//position
-				vertices[PLY_index].nx = e[3];	vertices[PLY_index].ny = e[4];	vertices[PLY_index].nz = e[5];	//normal
-				vertices[PLY_index].u = e[6];		vertices[PLY_index].v = e[7];									//texture coords
-				vertices[PLY_index].r = e[8];		vertices[PLY_index].g = e[9];		vertices[PLY_index].b = e[10];	//color
+				vertices[PLY_index].x = parseFloat(e[0]);		vertices[PLY_index].y = parseFloat(e[1]);		vertices[PLY_index].z = parseFloat(e[2]);		//position
+				vertices[PLY_index].nx = parseFloat(e[3]);		vertices[PLY_index].ny = parseFloat(e[4]);		vertices[PLY_index].nz = parseFloat(e[5]);		//normal
+				vertices[PLY_index].u = parseFloat(e[6]);		vertices[PLY_index].v = parseFloat(e[7]);												//texture coords
+				vertices[PLY_index].r = parseFloat(e[8]);		vertices[PLY_index].g = parseFloat(e[9]);		vertices[PLY_index].b = parseFloat(e[10]);		//color
 			} 
 
 			////////////////////////////////////////////////////////////////////
@@ -176,13 +304,12 @@ function loadAsyncPLYfile() {
 				if (PLY_index == PLY_Vertices) {
 					console.log("Resetting Index...");
 					FaceIndex = 0;
-					VAO_VertexIndex = 0;
 				}
 
 				if (FaceIndex < PLY_Faces){
 					// e[0] is not used; it stores the number of points on the polyhedron
 					// we assume that to be 3, and accept no alternative.
-					faces[FaceIndex] = new PLY_Face(e[1], e[2], e[3]);
+					faces[FaceIndex] = new PLY_Face( parseInt(e[1]), parseInt(e[2]), parseInt(e[3]) );
 
 				}
 				FaceIndex++;
@@ -192,6 +319,8 @@ function loadAsyncPLYfile() {
 		}
 	}
 
+	//True for averaged normals (Gouraud shading)
+	//False for fixed normals (flat shading)
 	buildTriangleList(true);
 
 	console.log("PLY_Vertices = " + PLY_Vertices + " loaded");
@@ -226,8 +355,48 @@ function loadAsyncPLYfile() {
 //   ########   #######  #### ######## ########        ##    ##     ## #### ##     ## ##    ##  ######   ######## ########  ######    //
 //                                                                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-function buildTriangleList()
+function buildTriangleList(averageNormals)
 {
+	///Average normals for Goroaud shading
+	//track a list of faces adjacent to each vertex
+	//We always run this because flat shading often has flipped triangles
+	//so we use it to catch flipped triangles.
+	if(averageNormals){
+		let adjFaces = new Array(vertices.length);
+		for( var i = 0; i<vertices.length; i++ ){
+			adjFaces[i] = [];
+		}
+
+		//loop through the list of faces, adding all adjacent vertices.
+		for( var i = 0; i<faces.length; i++ ){
+			//we get a list corresponding to a vertex of this face, and push the face index.
+			adjFaces[ faces[i].a ].push( i );
+			adjFaces[ faces[i].b ].push( i );
+			adjFaces[ faces[i].c ].push( i );
+		}
+
+		//Now for each vertex, we get the normals of each adjacent face
+		//and average them
+		for( var i = 0; i<vertices.length; i++ ){
+			var normx = 0; var normy = 0; var normz = 0;
+			//iterate over adjacent faces, getting the normals
+			for( var j = 0; j<adjFaces[i].length; j++ ){
+				var va = vertices[ faces[ adjFaces[i][j] ].a ];
+				var vb = vertices[ faces[ adjFaces[i][j] ].b ];
+				var vc = vertices[ faces[ adjFaces[i][j] ].c ];
+				var thisNorm = getNorm( va, vb, vc  );
+				normx += thisNorm[0];
+				normy += thisNorm[1];
+				normz += thisNorm[2];
+			}
+			normx /= adjFaces[i].length;
+			normy /= adjFaces[i].length;
+			normz /= adjFaces[i].length;
+			vertices[i].nx = normx;
+			vertices[i].ny = normy;
+			vertices[i].nz = normz;
+		}
+	}
 	for( var i = 0; i<faces.length; i++ ){
 		var a = faces[i].a;
 		var b = faces[i].b;
@@ -239,9 +408,18 @@ function buildTriangleList()
 		arrayVertex.push(vertices[c].x);	arrayVertex.push(vertices[c].y);	arrayVertex.push(vertices[c].z);
 
 		// normals
-		arrayNormal.push(vertices[a].nx);	arrayNormal.push(vertices[a].ny);	arrayNormal.push(vertices[a].nz);
-		arrayNormal.push(vertices[b].nx);	arrayNormal.push(vertices[b].ny);	arrayNormal.push(vertices[b].nz);
-		arrayNormal.push(vertices[c].nx);	arrayNormal.push(vertices[c].ny);	arrayNormal.push(vertices[c].nz);
+		if( !averageNormals ){
+			var thisNorm = getNorm( vertices[a], vertices[b], vertices[c] );
+			arrayNormal.push( thisNorm[0], thisNorm[1], thisNorm[2] );
+			arrayNormal.push( thisNorm[0], thisNorm[1], thisNorm[2] );
+			arrayNormal.push( thisNorm[0], thisNorm[1], thisNorm[2] );
+		}
+		else{
+			//pass through whatever normal situation is above
+			arrayNormal.push(vertices[a].nx);	arrayNormal.push(vertices[a].ny);	arrayNormal.push(vertices[a].nz);
+			arrayNormal.push(vertices[b].nx);	arrayNormal.push(vertices[b].ny);	arrayNormal.push(vertices[b].nz);
+			arrayNormal.push(vertices[c].nx);	arrayNormal.push(vertices[c].ny);	arrayNormal.push(vertices[c].nz);
+		}
 
 		// colors
 		arrayColor.push(vertices[a].r);	arrayColor.push(vertices[a].g);	arrayColor.push(vertices[a].b);
@@ -256,6 +434,9 @@ function buildTriangleList()
 		// index
 		arrayIndex.push(i);
 	}
+
+	
+
 }
 
 
@@ -367,5 +548,21 @@ function processBuffers(recenter, rescale, randomTexture)
 	fileVertexColBuffer.itemSize = 2;
 	fileVertexColBuffer.numItems = arrayTexture.length/2;
 
+	cb({
+		vPosBuf: fileVertexPosBuffer,
+		vNrmBuf: fileVertexNrmBuffer,
+		vTexBuf: fileVertexTexBuffer,
+		vColBuf: fileVertexColBuffer,
+	})
 }
+
+
+
+
+
+
+
+
+
+
 
