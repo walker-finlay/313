@@ -1,37 +1,22 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-import * as tools from "../lib/tools.js"
-import * as mat4 from "../lib/mat4.js"
-=======
-import * as tools from "../lib/tools.js"
+import * as tools from "../lib/toolsv3.js"
+import * as mat3 from "../lib/mat3.js"
 import * as mat4 from "../lib/mat4.js"
 import LoadPLY from "./plyParserV2.js";
->>>>>>> we got models
 
 window.AllTheStuff = async function AllTheStuff() {
 /**
  * All the webGL stuff
  */
-<<<<<<< HEAD
-=======
 
 var lastTime = 0;	
 var xRot = 0;		
 var xSpeed = 30;
 const pixel = new Uint8Array([255, 255, 255, 255]);  // opaque white
 
->>>>>>> we got models
 var canvas = document.getElementById("webGLcanvas");
 canvas.width = window.innerWidth-20;
 canvas.height = window.innerHeight-20;
 
-<<<<<<< HEAD
-// Methods --------------------------------------
-function tick() {
-    requestAnimFrame(tick); 
-    tools.resize(canvas);
-    drawScene();
-=======
 // Mouse event stuff ----------------------------
 let mouseclick = false;
 let downCoords = [0, 0];
@@ -52,8 +37,8 @@ canvas.addEventListener('mousemove', e => {
                 downCoords = [e.clientX-rect.left, e.clientY-rect.top];
         
                 // Rotate the scene
-                mat4.fromYRotation(mouseRotate, tools.degToRad(delta[0]/2));
-                mat4.rotate(mouseRotate, mouseRotate, tools.degToRad(delta[1]/2), [1, 0, 0]);
+                mat4.fromYRotation(mouseRotate, tools.degToRad(delta[0]));
+                mat4.rotate(mouseRotate, mouseRotate, tools.degToRad(delta[1]), [1, 0, 0]);
                 mat4.multiply(sceneRotate, mouseRotate, sceneRotate);
             
         });
@@ -101,8 +86,7 @@ function resetMv() {
     mat4.identity(mvMatrix);
     mat4.translate(mvMatrix, mvMatrix, [0, 0, zoom]);
     mat4.multiply(mvMatrix, mvMatrix, sceneRotate);
-    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
->>>>>>> we got models
+    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
 }
 
 function tryDrawPly(plyBufferObject) {
@@ -110,6 +94,10 @@ function tryDrawPly(plyBufferObject) {
         gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vPosBuf);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
             plyBufferObject.vPosBuf.itemSize, gl.FLOAT, false, 0, 0);    
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vNrmBuf);
+        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
+            plyBufferObject.vNrmBuf.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vTexBuf);
         gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, plyBufferObject.vTexBuf.itemSize, gl.FLOAT, false, 0, 0);
@@ -117,7 +105,7 @@ function tryDrawPly(plyBufferObject) {
         gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
         gl.uniform1i(shaderProgram.samplerUniform, 0);
 
-        tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+        tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
         gl.drawArrays(gl.TRIANGLES, 0, plyBufferObject.vPosBuf.numItems);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
@@ -125,17 +113,6 @@ function tryDrawPly(plyBufferObject) {
 
 // ~ Start WebGL ..............................................................
 // Create the GL viewport
-<<<<<<< HEAD
-var gl = tools.initGL(canvas);
-// Load the shaders and buffers into the GPU
-let shaderProgram;
-shaderProgram = tools.initShaders(shaderProgram);
- 
-
-// Points ---------------------------------------
-// Textures & Colors ----------------------------
-// Initbuffers ----------------------------------
-=======
 window.gl = tools.initGL(canvas);
 // Load the shaders and buffers into the GPU
 let shaderProgram;
@@ -146,7 +123,6 @@ const whiteTexture = gl.createTexture()
 gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
         1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
->>>>>>> we got models
 
 // Drawing --------------------------------------
 //Set the background color to opaque black
@@ -157,38 +133,27 @@ gl.enable(gl.DEPTH_TEST);
 // Outside drawScene()
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
+var normalMatrix = mat3.create();
 
 mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 200.0);
 
-<<<<<<< HEAD
-=======
 let bunny;
 let sphere;
 
-gl.enable(gl.SAMPLE_COVERAGE);
->>>>>>> we got models
+gl.uniform1i(shaderProgram.useLightingUniform, 1);
+
+// gl.enable(gl.SAMPLE_COVERAGE);
 function drawScene() {
     // Tell webGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     // Clear the canvas and the depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-<<<<<<< HEAD
-}
-
-// ~ End webGLStart() .........................................................
-tick()
-}
-=======
-window.webGLStart = () => {
-    console.log('sip');
-};
->>>>>>> p4 setup
-=======
     resetMv();
 
     tryDrawPly(bunny);
     mat4.translate(mvMatrix, mvMatrix, [-5, -3, 1]);
     tryDrawPly(sphere);
+    gl.uniform3f( shaderProgram.ambientColorUniform, 0.0, 0.5, 0.5 );
 }
 
 
@@ -199,4 +164,3 @@ LoadPLY('bunny/reconstruction/bun_zipper.ply', 60, plyObject => {
 });
 tick();
 }
->>>>>>> we got models

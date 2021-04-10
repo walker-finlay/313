@@ -343,7 +343,7 @@ function loadAsyncPLYfile() {
 		new Uint16Array(arrayIndex)
 	];
 
-	processBuffers(true, true, true); // TODO: Specify a scale
+	processBuffers(true, true, true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -496,7 +496,6 @@ function processBuffers(recenter, rescale, randomTexture)
 		centY /= arrayVertex.length/3;
 		centZ /= arrayVertex.length/3;
 	}
-	// TODO: Specify
 	/////////////////////////////////////////////////////////////////
 	///rescale the model                                          ///
 	/////////////////////////////////////////////////////////////////
