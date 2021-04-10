@@ -5,3 +5,8 @@ messin/
 p3/images/
 p3/notes
 serve
+<<<<<<< HEAD
+p4/models
+=======
+>>>>>>> we got models
+p4/models/
