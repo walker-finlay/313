@@ -44,16 +44,19 @@ let mouseRotate = mat4.create();
 
 canvas.addEventListener('mousemove', e => {
     if (mouseclick) {
-        delta = [
-            (e.clientX-rect.left)-downCoords[0], 
-            (e.clientY-rect.top)-downCoords[1]
-        ];
-        downCoords = [e.clientX-rect.left, e.clientY-rect.top];
-
-        // Rotate the scene
-        mat4.fromYRotation(mouseRotate, tools.degToRad(delta[0]/2));
-        mat4.rotate(mouseRotate, mouseRotate, tools.degToRad(delta[1]/2), [1, 0, 0]);
-        mat4.multiply(sceneRotate, mouseRotate, sceneRotate);
+        window.requestAnimationFrame(() => {
+                delta = [
+                    (e.clientX-rect.left)-downCoords[0], 
+                    (e.clientY-rect.top)-downCoords[1]
+                ];
+                downCoords = [e.clientX-rect.left, e.clientY-rect.top];
+        
+                // Rotate the scene
+                mat4.fromYRotation(mouseRotate, tools.degToRad(delta[0]/2));
+                mat4.rotate(mouseRotate, mouseRotate, tools.degToRad(delta[1]/2), [1, 0, 0]);
+                mat4.multiply(sceneRotate, mouseRotate, sceneRotate);
+            
+        });
     }
 });
 canvas.addEventListener('mousedown', e => {
@@ -102,6 +105,24 @@ function resetMv() {
 >>>>>>> we got models
 }
 
+function tryDrawPly(plyBufferObject) {
+    if (plyBufferObject) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vPosBuf);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+            plyBufferObject.vPosBuf.itemSize, gl.FLOAT, false, 0, 0);    
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vTexBuf);
+        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, plyBufferObject.vTexBuf.itemSize, gl.FLOAT, false, 0, 0);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
+        gl.uniform1i(shaderProgram.samplerUniform, 0);
+
+        tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
+        gl.drawArrays(gl.TRIANGLES, 0, plyBufferObject.vPosBuf.numItems);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    }
+}
+
 // ~ Start WebGL ..............................................................
 // Create the GL viewport
 <<<<<<< HEAD
@@ -142,6 +163,8 @@ mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 200.0);
 <<<<<<< HEAD
 =======
 let bunny;
+let sphere;
+
 gl.enable(gl.SAMPLE_COVERAGE);
 >>>>>>> we got models
 function drawScene() {
@@ -163,26 +186,17 @@ window.webGLStart = () => {
 =======
     resetMv();
 
-    if (bunny) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, bunny.vPosBuf);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-            bunny.vPosBuf.itemSize, gl.FLOAT, false, 0, 0);    
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, bunny.vTexBuf);
-        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, bunny.vTexBuf.itemSize, gl.FLOAT, false, 0, 0);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
-        gl.uniform1i(shaderProgram.samplerUniform, 0);
-
-        tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix);
-        gl.drawArrays(gl.TRIANGLES, 0, bunny.vPosBuf.numItems);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-    }
+    tryDrawPly(bunny);
+    mat4.translate(mvMatrix, mvMatrix, [-5, -3, 1]);
+    tryDrawPly(sphere);
 }
 
 
 // ~ End webGLStart() .........................................................
-LoadPLY('bunny/reconstruction/bun_zipper.ply', plyObject => {bunny = plyObject;});
+LoadPLY('bunny/reconstruction/bun_zipper.ply', 60, plyObject => {
+    bunny = plyObject;
+    LoadPLY('sphere.ply', 0.01, plyObject => {sphere = plyObject;});
+});
 tick();
 }
 >>>>>>> we got models

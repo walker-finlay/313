@@ -20,7 +20,7 @@ var fileVertexTexBuffer;
 var fileVertexColBuffer;
 var fileVertexIndBuffer;
 var modelData = [];
-var modelScale = 60;
+var modelScale = 0.01;
 
 //for use in analysis
 var vertices = null;
@@ -82,14 +82,16 @@ function PLY_Face(a, b, c) {
 //                                                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 let cb;
+let myScale;
 var xmlhttp;
-export default function LoadPLY(filename, callback)
+export default function LoadPLY(filename, s, callback)
 {
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function(){
 		if (xmlhttp.readyState == XMLHttpRequest.DONE) {
 			if (xmlhttp.status == 200) {
 				cb = callback;
+				myScale = s;
 				loadAsyncPLYfile();
 				
 				//test
@@ -341,7 +343,7 @@ function loadAsyncPLYfile() {
 		new Uint16Array(arrayIndex)
 	];
 
-	processBuffers(true, true, true);
+	processBuffers(true, true, true); // TODO: Specify a scale
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -494,15 +496,16 @@ function processBuffers(recenter, rescale, randomTexture)
 		centY /= arrayVertex.length/3;
 		centZ /= arrayVertex.length/3;
 	}
-		
+	// TODO: Specify
 	/////////////////////////////////////////////////////////////////
 	///rescale the model                                          ///
 	/////////////////////////////////////////////////////////////////
 	if( rescale ){
 		for (var i = 0; i < arrayVertex.length/3; i++){
-			arrayVertex[3*i+0] = modelScale * (modelData[0][3*i+0] - centX);
-			arrayVertex[3*i+1] = modelScale * (modelData[0][3*i+1] - centY);
-			arrayVertex[3*i+2] = modelScale * (modelData[0][3*i+2] - centZ);
+			
+			arrayVertex[3*i+0] = myScale * (modelData[0][3*i+0] - centX);
+			arrayVertex[3*i+1] = myScale * (modelData[0][3*i+1] - centY);
+			arrayVertex[3*i+2] = myScale * (modelData[0][3*i+2] - centZ);
 		}
 	}
 
@@ -553,7 +556,7 @@ function processBuffers(recenter, rescale, randomTexture)
 		vNrmBuf: fileVertexNrmBuffer,
 		vTexBuf: fileVertexTexBuffer,
 		vColBuf: fileVertexColBuffer,
-	})
+	});
 }
 
 
