@@ -2,7 +2,8 @@ import * as tools from "../lib/toolsv3.js"
 import * as mat3 from "../lib/mat3.js"
 import * as mat4 from "../lib/mat4.js"
 import LoadPLY from "./plyParserV2.js";
-import hexRgb from "../lib/hex-rgb.js"
+import hexRgb from "../lib/hex-rgb.js";
+import rgbHex from "../lib/rgb-hex.js";
 
 window.AllTheStuff = async function AllTheStuff() {
 /**
@@ -23,13 +24,16 @@ let mouseclick = false;
 let downCoords = [0, 0];
 let rect = canvas.getBoundingClientRect();
 let delta = [0, 0];
-let zoom = -55;
+let zoom = -35;
 
 let sceneRotate = mat4.create();
 let mouseRotate = mat4.create();
 
 let model1draw = document.getElementById('model1draw');
 let model2draw = document.getElementById('model2draw');
+
+let ambientcolor = document.getElementById('ambientcolor');
+let directionalcolor = document.getElementById('directionalcolor');
 
 let xlight = document.getElementById('xlight')
 let ylight = document.getElementById('ylight')
@@ -38,13 +42,13 @@ let zlight = document.getElementById('zlight')
 model1draw.addEventListener('change', () => {bunny.draw = !bunny.draw;});
 model2draw.addEventListener('change', () => {sphere.draw = !sphere.draw});
 
-document.getElementById('ambientcolor').addEventListener('input', e => {
+ambientcolor.addEventListener('input', e => {
     let color = hexRgb(e.target.value);
     gl.uniform3f(shaderProgram.ambientColorUniform, 
         color.red/255, color.green/255, color.blue/255);
 });
 
-document.getElementById('directionalcolor').addEventListener('input', e => {
+directionalcolor.addEventListener('input', e => {
     let color = hexRgb(e.target.value);
     gl.uniform3f(shaderProgram.directionalColorUniform, 
         color.red/255, color.green/255, color.blue/255);
@@ -55,6 +59,18 @@ document.querySelectorAll('.direction').forEach(slider => {
         gl.uniform3f(shaderProgram.lightingDirectionUniform, 
             xlight.value, ylight.value, zlight.value);
     });
+});
+
+document.getElementById('random').addEventListener('click', () => {
+    let rand = {red: Math.random(), green: Math.random(), blue: Math.random()}
+    gl.uniform3f(shaderProgram.ambientColorUniform, 
+        rand.red, rand.green, rand.blue);
+    ambientcolor.value = '#' + rgbHex(rand.red*255, rand.green*255, rand.blue*255);
+
+    rand = {red: Math.random(), green: Math.random(), blue: Math.random()}
+    gl.uniform3f(shaderProgram.directionalColorUniform, 
+        rand.red, rand.green, rand.blue);
+    directionalcolor.value = '#' + rgbHex(rand.red*255, rand.green*255, rand.blue*255);
 });
 
 canvas.addEventListener('mousemove', e => {
@@ -116,7 +132,7 @@ function resetMv() {
 }
 
 function tryDrawPly(plyObject) {
-    if (plyObject.buffers && plyObject.draw) { // TODO: set this equal to the checkbox
+    if (plyObject.buffers && plyObject.draw) {
         gl.bindBuffer(gl.ARRAY_BUFFER, plyObject.buffers.vPosBuf);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
             plyObject.buffers.vPosBuf.itemSize, gl.FLOAT, false, 0, 0);    
