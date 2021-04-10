@@ -2,6 +2,7 @@ import * as tools from "../lib/toolsv3.js"
 import * as mat3 from "../lib/mat3.js"
 import * as mat4 from "../lib/mat4.js"
 import LoadPLY from "./plyParserV2.js";
+import hexRgb from "../lib/hex-rgb.js"
 
 window.AllTheStuff = async function AllTheStuff() {
 /**
@@ -26,6 +27,35 @@ let zoom = -55;
 
 let sceneRotate = mat4.create();
 let mouseRotate = mat4.create();
+
+let model1draw = document.getElementById('model1draw');
+let model2draw = document.getElementById('model2draw');
+
+let xlight = document.getElementById('xlight')
+let ylight = document.getElementById('ylight')
+let zlight = document.getElementById('zlight')
+
+model1draw.addEventListener('change', () => {bunny.draw = !bunny.draw;});
+model2draw.addEventListener('change', () => {sphere.draw = !sphere.draw});
+
+document.getElementById('ambientcolor').addEventListener('input', e => {
+    let color = hexRgb(e.target.value);
+    gl.uniform3f(shaderProgram.ambientColorUniform, 
+        color.red/255, color.green/255, color.blue/255);
+});
+
+document.getElementById('directionalcolor').addEventListener('input', e => {
+    let color = hexRgb(e.target.value);
+    gl.uniform3f(shaderProgram.directionalColorUniform, 
+        color.red/255, color.green/255, color.blue/255);
+});
+
+document.querySelectorAll('.direction').forEach(slider => {
+    slider.addEventListener('input', () => {
+        gl.uniform3f(shaderProgram.lightingDirectionUniform, 
+            xlight.value, ylight.value, zlight.value);
+    });
+});
 
 canvas.addEventListener('mousemove', e => {
     if (mouseclick) {
@@ -56,10 +86,6 @@ canvas.addEventListener('mouseleave', e => {
     delta = [0, 0];
     mouseclick = false;
 });
-document.addEventListener('change', e => {
-    let planet = eval(e.target.id);
-    planet.draw = !planet.draw;
-});
 
 // Methods --------------------------------------
 function animate() {
@@ -89,24 +115,24 @@ function resetMv() {
     tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
 }
 
-function tryDrawPly(plyBufferObject) {
-    if (plyBufferObject) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vPosBuf);
+function tryDrawPly(plyObject) {
+    if (plyObject.buffers && plyObject.draw) { // TODO: set this equal to the checkbox
+        gl.bindBuffer(gl.ARRAY_BUFFER, plyObject.buffers.vPosBuf);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
-            plyBufferObject.vPosBuf.itemSize, gl.FLOAT, false, 0, 0);    
+            plyObject.buffers.vPosBuf.itemSize, gl.FLOAT, false, 0, 0);    
         
-        gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vNrmBuf);
+        gl.bindBuffer(gl.ARRAY_BUFFER, plyObject.buffers.vNrmBuf);
         gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
-            plyBufferObject.vNrmBuf.itemSize, gl.FLOAT, false, 0, 0);
+            plyObject.buffers.vNrmBuf.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, plyBufferObject.vTexBuf);
-        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, plyBufferObject.vTexBuf.itemSize, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, plyObject.buffers.vTexBuf);
+        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, plyObject.buffers.vTexBuf.itemSize, gl.FLOAT, false, 0, 0);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
         gl.uniform1i(shaderProgram.samplerUniform, 0);
 
         tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
-        gl.drawArrays(gl.TRIANGLES, 0, plyBufferObject.vPosBuf.numItems);
+        gl.drawArrays(gl.TRIANGLES, 0, plyObject.buffers.vPosBuf.numItems);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
 }
@@ -137,10 +163,13 @@ var normalMatrix = mat3.create();
 
 mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 200.0);
 
-let bunny;
-let sphere;
+let bunny = {draw: true, buffers: null};
+let sphere = {draw: true, buffers: null};
 
 gl.uniform1i(shaderProgram.useLightingUniform, 1);
+gl.uniform3f(shaderProgram.ambientColorUniform, 0.0, 0.0, 0.0);
+gl.uniform3f(shaderProgram.lightingDirectionUniform, 0.0, 0.5, 0.5);
+gl.uniform3f(shaderProgram.directionalColorUniform, 1.0, 1.0, 1.0);
 
 // gl.enable(gl.SAMPLE_COVERAGE);
 function drawScene() {
@@ -153,14 +182,15 @@ function drawScene() {
     tryDrawPly(bunny);
     mat4.translate(mvMatrix, mvMatrix, [-5, -3, 1]);
     tryDrawPly(sphere);
-    gl.uniform3f( shaderProgram.ambientColorUniform, 0.0, 0.5, 0.5 );
 }
 
 
 // ~ End webGLStart() .........................................................
-LoadPLY('bunny/reconstruction/bun_zipper.ply', 60, plyObject => {
-    bunny = plyObject;
-    LoadPLY('sphere.ply', 0.01, plyObject => {sphere = plyObject;});
+LoadPLY('sphere.ply', 0.01, plyBufferObject => {
+    sphere.buffers = plyBufferObject;
+    LoadPLY('bunny/reconstruction/bun_zipper.ply', 60, plyBufferObject => {
+        bunny.buffers = plyBufferObject;
+    });
 });
 tick();
 }

@@ -35,6 +35,8 @@
 
                 uniform bool uUseLighting;
 
+                // uniform bool redraw; // TODO:
+
                 varying vec3 vLightWeighting;
                 // varying lowp vec4 vColor;
                 varying vec2 vTextureCoord;
@@ -52,7 +54,7 @@
                         ///calculate the light weighting
                         vec3 transformedNormal = uNMatrix * aVertexNormal;
                         float directionalLightWeighting = max(dot(transformedNormal, uLightingDirection), 0.0);
-                        vLightWeighting = uAmbientColor + (uDirectionalColor * directionalLightWeighting); // FIXME: +()???
+                        vLightWeighting = uAmbientColor + uDirectionalColor * directionalLightWeighting; // FIXME: +()???
                     }
                 }
 
@@ -97,6 +99,24 @@
     </head>
 
     <body onload="AllTheStuff()">
+        <div id="controlBox">
+            <input type="checkbox" id="model1draw" class="modeldraw" checked/>
+            <label for="model1draw">Draw model 1</label> <br>
+            <input type="checkbox" id="model2draw" class="modeldraw" checked/>
+            <label for="model2draw">Draw model 2</label> <br>
+
+            <input type="color" id="ambientcolor" value="#000000"/>
+            <label for="ambientcolor">Ambient Light Color</label> <br>
+            <input type="color" id="directionalcolor" value="#FFFFFF"/>
+            <label for="directionalcolor">Directional Light Color</label> <br>
+
+            <input type="range" id="xlight" class="direction" min="-1" max="1" step="0.01" value="0">
+            <label for="xlight">Light vector x</label> <br>
+            <input type="range" id="ylight" class="direction" min="-1" max="1" step="0.01" value="0.5">
+            <label for="ylight">Light vector y</label> <br>
+            <input type="range" id="zlight" class="direction" min="-1" max="1" step="0.01" value="0.5">
+            <label for="zlight">Light vector z</label>
+        </div>
         <canvas id="webGLcanvas" style="border: none"></canvas>
     </body>
 </html>
