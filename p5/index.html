@@ -67,8 +67,11 @@
                         // vec3 lightPos = (uMVMatrix * vec4(uPtLightPos, 1.0)).xyz; // What is the point of this?
 
                         float ptLightWeight = max(dot(normalize(transformedNormal), normalize(uPtLightPos - p)), 0.0); 
+                        vec3 ptReflection = reflect(normalize(uPtLightPos - p), normalize(transformedNormal));
+                        float ptDotProd = dot(normalize(ptReflection), normalize(p));
+                        float ptSpec = light_specularity * material_specularity * pow(max(ptDotProd, 0.0), material_shine);
 
-                        vLightWeighting = uAmbientColor + (normalize(uDirectionalColor) * directionalLightWeighting) + spec + (normalize(uPtLightColor) * ptLightWeight);
+                        vLightWeighting = uAmbientColor + (normalize(uDirectionalColor) * directionalLightWeighting) + spec + (normalize(uPtLightColor) * ptLightWeight) + 2.0*ptSpec;
                     }
                 }
 
@@ -115,15 +118,19 @@
     <body onload="AllTheStuff()">
         <div id="controlBox">
             <input type="checkbox" id="model1draw" class="modeldraw" checked/>
-            <label for="model1draw">Draw model 1</label> <br>
+            <label for="model1draw">Draw model 1</label>
+            <input type="checkbox" id="model1tex" class="modeltex"/>
+            <label for="model1tex">Texture?</label> <br>
             <input type="checkbox" id="model2draw" class="modeldraw" checked/>
-            <label for="model2draw">Draw model 2</label> <br>
+            <label for="model2draw">Draw model 2</label>
+            <input type="checkbox" id="model2tex" class="modeltex"/>
+            <label for="model2tex">Texture?</label> <br>
 
-            <input type="color" id="ambientcolor" value="#000000"/>
+            <input type="color" id="ambientcolor" value="#004D1D"/>
             <label for="ambientcolor">Ambient Light Color</label> <br>
-            <input type="color" id="directionalcolor" value="#FFFFFF"/>
+            <input type="color" id="directionalcolor" value="#8606E8"/>
             <label for="directionalcolor">Directional Light Color</label> <br>
-            <input type="color" id="ptlightcolor" value="#FFFFFF"/>
+            <input type="color" id="ptlightcolor" value="#FF0000"/>
             <label for="ptlightcolor">Point Light Color</label> <br>
 
             <input type="range" id="xlight" class="direction" min="-1" max="1" step="0.01" value="0">

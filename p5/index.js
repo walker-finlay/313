@@ -119,13 +119,13 @@ canvas.addEventListener('mouseleave', e => {
 function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
-        var elapsed = timeNow - lastTime;
-        pointLightRot = (LightRotSpeed * elapsed) / 10.0;
-        if( pointLightRot > 360 ) pointLightRot -= 360;
-        vec3.rotateX(pointLightPos, pointLightPos, vec3.create(), tools.degToRad( pointLightRot ));
-        // resetMv();
-        // vec3.transformMat4(pointLightPos, pointLightPos, mvMatrix);
-        gl.uniform3f(shaderProgram.ptLightPosUniform, pointLightPos[0], pointLightPos[1], pointLightPos[2]);
+        if (lightSourceCoords[0] >= xMax || lightSourceCoords[0] <= xMin) {vx *= -1}
+        if (lightSourceCoords[1] >= yMax || lightSourceCoords[1] <= yMin) {vy *= -1}
+
+        lightSourceCoords[0] += vx * (timeNow - lastTime);
+        lightSourceCoords[1] += vy * (timeNow - lastTime);
+
+        gl.uniform3f(shaderProgram.ptLightPosUniform, lightSourceCoords[0], lightSourceCoords[1], 0);
     }
     lastTime = timeNow;
 }
@@ -134,7 +134,7 @@ function tick() {
     window.requestAnimationFrame(tick);
     tools.resize(canvas);
     drawScene();
-    animate();
+    // animate();
 }
 
 function resetMv() {
@@ -173,11 +173,31 @@ window.gl = tools.initGL(canvas);
 let shaderProgram;
 shaderProgram = tools.initShaders(shaderProgram);
 gl.lineWidth(0.5);
- 
+
+// Stuff that gets drawn ------------------------
+let xMin = -10;
+let xMax = 10;
+let yMin = -10;
+let yMax = 10; 
+let squarePositions = [   xMin, yMax, 0,    xMax, yMax, 0,
+                        xMax, yMin, 0,    xMin, yMin, 0];
+let lightSourceCoords = [(Math.random()*20)-10, (Math.random()*20)-10, 0];
+
+let vx = Math.random()*0.5;
+let vy = Math.random()*0.5;
+
 const whiteTexture = gl.createTexture()
 gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
         1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+
+const lightSource = new tools.glSphere(0.5, true);
+let lightSourcePositionBuffer = tools.initBuffer(lightSource.sVertices, 3, lightSource.numItems);
+
+let squarePositionBuffer = tools.initBuffer(squarePositions, 3, 4);
+
+let bunny = {draw: true, buffers: null};
+let teapot = {draw: true, buffers: null};
 
 // Drawing --------------------------------------
 //Set the background color to opaque black
@@ -192,15 +212,12 @@ var normalMatrix = mat3.create();
 
 mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 200.0);
 
-let bunny = {draw: true, buffers: null};
-let teapot = {draw: true, buffers: null};
-
 // Initial conditions
 gl.uniform1i(shaderProgram.useLightingUniform, 1);
-gl.uniform3f(shaderProgram.ambientColorUniform, 0.0, 0.0, 0.0);
+gl.uniform3f(shaderProgram.ambientColorUniform, 0.0, 77/255, 29/255);
 gl.uniform3f(shaderProgram.lightingDirectionUniform, 0.0, 0.5, 0.5);
-gl.uniform3f(shaderProgram.directionalColorUniform, 1.0, 1.0, 1.0);
-gl.uniform3f(shaderProgram.ptLightColorUniform, 0.5, 0.5, 0.5);
+gl.uniform3f(shaderProgram.directionalColorUniform, 134/255, 6/255, 232/255);
+gl.uniform3f(shaderProgram.ptLightColorUniform, 1.0, 0.0, 0.0);
 
 gl.uniform1f(shaderProgram.lightSpecUniform, 0.75);
 gl.uniform1f(shaderProgram.matSpecUniform, 0.75);
@@ -214,11 +231,37 @@ function drawScene() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     resetMv();
 
+    // PLY Models 
+    gl.uniform1i(shaderProgram.useLightingUniform, 1);
     tryDrawPly(bunny);
     mat4.translate(mvMatrix, mvMatrix, [-7, -2, 2]);
     mat4.rotate(mvMatrix, mvMatrix, -Math.PI/2 , [1, 0, 0]);
     mat4.rotate(mvMatrix, mvMatrix, Math.PI/4 , [0, 0, 1]);
     tryDrawPly(teapot);
+
+    gl.uniform1i(shaderProgram.useLightingUniform, 0);
+    // Square stuff
+    mat4.identity(mvMatrix);
+    mat4.translate(mvMatrix, mvMatrix, [0, 0, -20]);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, squarePositionBuffer);
+    // gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+    //     squarePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    // tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
+    // gl.drawArrays(gl.LINE_LOOP, 0, squarePositionBuffer.numItems);
+
+    // Light source stuff
+    mat4.translate(mvMatrix, mvMatrix, [lightSourceCoords[0]+vx, lightSourceCoords[1]+vy, 0]);
+    tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
+
+    mat4.getTranslation(lightSourceCoords, mvMatrix);
+    if (lightSourceCoords[0] >= xMax || lightSourceCoords[0] <= xMin) {vx *= -1}
+    if (lightSourceCoords[1] >= yMax || lightSourceCoords[1] <= yMin) {vy *= -1}
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, lightSourcePositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+        lightSourcePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, lightSourcePositionBuffer.numItems);
+    gl.uniform3f(shaderProgram.ptLightPosUniform, lightSourceCoords[0], lightSourceCoords[1], 0);
 }
 
 
