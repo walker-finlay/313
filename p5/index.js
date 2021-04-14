@@ -1,5 +1,6 @@
 import * as tools from "../lib/toolsv3.js"
 import * as mat3 from "../lib/mat3.js"
+import * as vec3 from "../lib/vec3.js";
 import * as mat4 from "../lib/mat4.js"
 import LoadPLY from "./plyParserV2.js";
 import hexRgb from "../lib/hex-rgb.js";
@@ -10,6 +11,10 @@ window.AllTheStuff = async function AllTheStuff() {
  * All the webGL stuff
  */
 
+var pointLightPos = [0, 0, 1000];
+var pointLightRot = 0;
+var LightRotSpeed = 0.5; 
+
 var lastTime = 0;	
 var xRot = 0;		
 var xSpeed = 30;
@@ -19,7 +24,7 @@ var canvas = document.getElementById("webGLcanvas");
 canvas.width = window.innerWidth-20;
 canvas.height = window.innerHeight-20;
 
-// Mouse event stuff ----------------------------
+// Input handlers stuff ------------------------------
 let mouseclick = false;
 let downCoords = [0, 0];
 let rect = canvas.getBoundingClientRect();
@@ -34,6 +39,7 @@ let model2draw = document.getElementById('model2draw');
 
 let ambientcolor = document.getElementById('ambientcolor');
 let directionalcolor = document.getElementById('directionalcolor');
+let ptlightcolor = document.getElementById('ptlightcolor');
 
 let xlight = document.getElementById('xlight')
 let ylight = document.getElementById('ylight')
@@ -51,6 +57,12 @@ ambientcolor.addEventListener('input', e => {
 directionalcolor.addEventListener('input', e => {
     let color = hexRgb(e.target.value);
     gl.uniform3f(shaderProgram.directionalColorUniform, 
+        color.red/255, color.green/255, color.blue/255);
+});
+
+ptlightcolor.addEventListener('input', e => {
+    let color = hexRgb(e.target.value);
+    gl.uniform3f(shaderProgram.ptLightColorUniform,
         color.red/255, color.green/255, color.blue/255);
 });
 
@@ -108,11 +120,12 @@ function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
-        //update the rotation to the current time.
-        xRot += (xSpeed * elapsed) / 1000.0;
-        if( xRot > 360 ){
-            xRot -= 360;
-        }
+        pointLightRot = (LightRotSpeed * elapsed) / 10.0;
+        if( pointLightRot > 360 ) pointLightRot -= 360;
+        vec3.rotateX(pointLightPos, pointLightPos, vec3.create(), tools.degToRad( pointLightRot ));
+        // resetMv();
+        // vec3.transformMat4(pointLightPos, pointLightPos, mvMatrix);
+        gl.uniform3f(shaderProgram.ptLightPosUniform, pointLightPos[0], pointLightPos[1], pointLightPos[2]);
     }
     lastTime = timeNow;
 }
@@ -182,14 +195,16 @@ mat4.perspective(pMatrix, 45, gl.viewportWidth / gl.viewportHeight, 0.1, 200.0);
 let bunny = {draw: true, buffers: null};
 let teapot = {draw: true, buffers: null};
 
+// Initial conditions
 gl.uniform1i(shaderProgram.useLightingUniform, 1);
 gl.uniform3f(shaderProgram.ambientColorUniform, 0.0, 0.0, 0.0);
 gl.uniform3f(shaderProgram.lightingDirectionUniform, 0.0, 0.5, 0.5);
-gl.uniform3f(shaderProgram.directionalColorUniform, 1.0, 1.0, 1.0); // FIXME: should be 1,1,1
+gl.uniform3f(shaderProgram.directionalColorUniform, 1.0, 1.0, 1.0);
+gl.uniform3f(shaderProgram.ptLightColorUniform, 0.5, 0.5, 0.5);
 
-gl.uniform1f(shaderProgram.lightSpecUniform, 1.0);
-gl.uniform1f(shaderProgram.matSpecUniform, 1.0);
-gl.uniform1f(shaderProgram.matShineUniform, 9.5);
+gl.uniform1f(shaderProgram.lightSpecUniform, 0.75);
+gl.uniform1f(shaderProgram.matSpecUniform, 0.75);
+gl.uniform1f(shaderProgram.matShineUniform, 30.0);
 
 // gl.enable(gl.SAMPLE_COVERAGE);
 function drawScene() {
