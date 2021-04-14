@@ -45,8 +45,14 @@ let xlight = document.getElementById('xlight')
 let ylight = document.getElementById('ylight')
 let zlight = document.getElementById('zlight')
 
+let model1tex = document.getElementById('model1tex');
+let model2tex = document.getElementById('model2tex');
+
 model1draw.addEventListener('change', () => {bunny.draw = !bunny.draw;});
 model2draw.addEventListener('change', () => {teapot.draw = !teapot.draw});
+
+model1tex.addEventListener('change', () => {bunny.tex = !bunny.tex;})
+model2tex.addEventListener('change', () => {teapot.tex = !teapot.tex;})
 
 ambientcolor.addEventListener('input', e => {
     let color = hexRgb(e.target.value);
@@ -163,7 +169,11 @@ function tryDrawPly(plyObject) {
         gl.bindBuffer(gl.ARRAY_BUFFER, plyObject.buffers.vTexBuf);
         gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, plyObject.buffers.vTexBuf.itemSize, gl.FLOAT, false, 0, 0);
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
+        if (plyObject.tex) {
+            gl.bindTexture(gl.TEXTURE_2D, actualTexture);
+        } else {
+            gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
+        }
         gl.uniform1i(shaderProgram.samplerUniform, 0);
 
         tools.setMatrixUniforms(shaderProgram, mvMatrix, pMatrix, normalMatrix);
@@ -181,34 +191,36 @@ shaderProgram = tools.initShaders(shaderProgram);
 gl.lineWidth(0.5);
 
 // Stuff that gets drawn ------------------------
+let vx = Math.random()*0.5;
+let vy = Math.random()*0.5;
 let xMin = -10;
 let xMax = 10;
 let yMin = -10;
 let yMax = 10; 
 let squarePositions = [   xMin, yMax, 0,    xMax, yMax, 0,
                         xMax, yMin, 0,    xMin, yMin, 0];
+
 let lightSourceCoords = [(Math.random()*20)-10, (Math.random()*20)-10, 0];
-const lspx = new Uint8Array([255, 0, 0, 255]);  // texture for light source sphere
-const lstex = gl.createTexture()
+const lspx = new Uint8Array([255, 0, 0, 255]);  // colored pixel for light source
+const lstex = gl.createTexture()                // texture for light source 
 gl.bindTexture(gl.TEXTURE_2D, lstex);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
         1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, lspx);
 
-let vx = Math.random()*0.5;
-let vy = Math.random()*0.5;
+const lightSource = new tools.glSphere(0.5, true);
+let lightSourcePositionBuffer = tools.initBuffer(lightSource.sVertices, 3, lightSource.numItems);
+let lightSourceTextureBuffer = tools.initBuffer(lightSource.textureCoords, 2, lightSource.stacks*(lightSource.slices + 1)*2);
+// let squarePositionBuffer = tools.initBuffer(squarePositions, 3, 4);
 
 const whiteTexture = gl.createTexture()
 gl.bindTexture(gl.TEXTURE_2D, whiteTexture);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
         1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 
-const lightSource = new tools.glSphere(0.5, true);
-let lightSourcePositionBuffer = tools.initBuffer(lightSource.sVertices, 3, lightSource.numItems);
-let lightSourceTextureBuffer = tools.initBuffer(lightSource.textureCoords, 2, lightSource.stacks*(lightSource.slices + 1)*2);
-let squarePositionBuffer = tools.initBuffer(squarePositions, 3, 4);
+const actualTexture = tools.initTexture('images/njd.jpeg');
 
-let bunny = {draw: true, buffers: null};
-let teapot = {draw: true, buffers: null};
+let bunny = {draw: true, buffers: null, tex: false};
+let teapot = {draw: true, buffers: null, tex: false};
 
 // Drawing --------------------------------------
 //Set the background color to opaque black
