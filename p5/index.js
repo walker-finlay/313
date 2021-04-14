@@ -61,9 +61,15 @@ directionalcolor.addEventListener('input', e => {
 });
 
 ptlightcolor.addEventListener('input', e => {
-    let color = hexRgb(e.target.value);
-    gl.uniform3f(shaderProgram.ptLightColorUniform,
-        color.red/255, color.green/255, color.blue/255);
+    window.requestAnimationFrame(() => {
+        let color = hexRgb(e.target.value);
+        gl.uniform3f(shaderProgram.ptLightColorUniform,
+            color.red/255, color.green/255, color.blue/255);
+        const lspx = new Uint8Array([color.red, color.green, color.blue, 255]);
+        gl.bindTexture(gl.TEXTURE_2D, lstex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
+                1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, lspx);
+    });
 });
 
 document.querySelectorAll('.direction').forEach(slider => {
@@ -182,6 +188,11 @@ let yMax = 10;
 let squarePositions = [   xMin, yMax, 0,    xMax, yMax, 0,
                         xMax, yMin, 0,    xMin, yMin, 0];
 let lightSourceCoords = [(Math.random()*20)-10, (Math.random()*20)-10, 0];
+const lspx = new Uint8Array([255, 0, 0, 255]);  // texture for light source sphere
+const lstex = gl.createTexture()
+gl.bindTexture(gl.TEXTURE_2D, lstex);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
+        1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, lspx);
 
 let vx = Math.random()*0.5;
 let vy = Math.random()*0.5;
@@ -193,7 +204,7 @@ gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
 
 const lightSource = new tools.glSphere(0.5, true);
 let lightSourcePositionBuffer = tools.initBuffer(lightSource.sVertices, 3, lightSource.numItems);
-
+let lightSourceTextureBuffer = tools.initBuffer(lightSource.textureCoords, 2, lightSource.stacks*(lightSource.slices + 1)*2);
 let squarePositionBuffer = tools.initBuffer(squarePositions, 3, 4);
 
 let bunny = {draw: true, buffers: null};
@@ -260,6 +271,15 @@ function drawScene() {
     gl.bindBuffer(gl.ARRAY_BUFFER, lightSourcePositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
         lightSourcePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, lightSourceTextureBuffer);
+    gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, lightSourceTextureBuffer.itemSize,
+        gl.FLOAT, false, 0, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, lstex);
+    gl.uniform1i(shaderProgram.samplerUniform, 0);
+
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, lightSourcePositionBuffer.numItems);
     gl.uniform3f(shaderProgram.ptLightPosUniform, lightSourceCoords[0], lightSourceCoords[1], 0);
 }
