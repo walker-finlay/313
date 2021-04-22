@@ -173,7 +173,9 @@ function tryDrawPly(plyObject) {
 // Create the GL viewport
 window.gl = tools.initGL(canvas);
 // Load the shaders and buffers into the GPU
+let currentProgram;
 let shaderProgram;
+let perFragmentProgram;
 shaderProgram = tools.initShaders(shaderProgram);
 gl.lineWidth(0.5);
 
