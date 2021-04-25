@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Walker Finlay - p5</title>
+        <title>Walker Finlay - p6 WIP</title>
 
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
         <link rel="stylesheet" href="index.css">
@@ -111,8 +111,83 @@
             ////////////////////////////////////////////////////////
         </script>
 
-        <script id="perfrag-shader-vs"></script>
-        <script id="perfrag-shader-fs"></script>
+        <!--M/-\-!-//*~//!--1====================1-\\*~//*~//-/-\W-->
+        <!--|-@-|-//\\//\\X-1 NEW PER FRAG STUFF 1-X\\//\\//-|-@-|-->
+        <!--M\-/-//*~\\*~\\-1====================1--!\\*~\\-!-\-/W-->
+
+        <script id="perfrag-shader-vs" type="x-shader/x-vertex">
+            // VERTEX SHADER //
+            attribute vec3 aVertexPosition;
+            attribute vec2 aTextureCoord;
+            
+            attribute vec3 aVertexNormal;
+
+            uniform mat4 uPMatrix;
+            uniform mat4 uMVMatrix;
+            uniform mat3 uNMatrix;
+            uniform vec3 uLightingDirection;
+            uniform vec3 uDirectionalColor;
+
+            varying vec3 vPosition;
+            varying vec2 vTextureCoord;
+            varying vec3 vTransformedNormal;
+            varying vec3 vLightPos;
+
+            void main() {
+                // Pass position to fs
+                vPosition = (uMVMatrix * vec4(aVertexPosition, 1.0)).xyz;
+                // Pass tex coord to fs
+                vTextureCoord = aTextureCoord;
+                // Calculate transformed normal
+                vTransformedNormal = uNMatrix * aVertexNormal;
+                // Calculate point light position ?
+                // thining Light position should be a uniform
+                // pass through as varying variables ?
+                
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            }
+        </script>
+        <script id="perfrag-shader-fs" type="x-shader/x-fragment">
+            // FRAGMENT SHADER //
+            precision mediump float;
+
+            uniform vec3 uAmbientColor;
+            uniform vec3 uLightingDirection;
+            uniform vec3 uDirectionalColor;
+            uniform vec3 light_specularity;
+            uniform vec3 material_specularity;
+            uniform float material_shine;
+
+            uniform sampler2D uSampler;
+
+            varying vec3 vPosition;
+            varying vec2 vTextureCoord;
+            varying vec3 vTransformedNormal;
+            uniform vec3 uPtLightPos;
+            // varying vec3 vPtLightPos; // FIXME: where dis come from
+
+            void main() {
+                vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+
+                // Constants
+                float ambientWeight = 1.0; // FIXME: This shouldnot be 1?
+                vec3 directionalColor = normalize(uDirectionalColor);
+                float directionalWeight = max(dot(normalize(vTransformedNormal), normalize(uLightingDirection)), 0.0);
+                vec3 reflection = reflect(normalize(uLightingDirection), vTransformedNormal);
+                float specularWeight = pow(max(dot(normalize(reflection),normalize(vPosition)), 0.0), material_shine);
+                vec3 specularColor = light_specularity + material_specularity; // FIXME: Should this maybe be addition maybe?
+                float ptLight1_directionalWeight = max(dot(vTransformedNormal, normalize(uPtLightPos - vPosition)), 0.0);
+                vec3 ptLight1_directionalColor = vec3(1.0, 0.0, 0.0);
+
+                vec3 lightWeighting =
+                    ambientWeight * uAmbientColor 
+                    + directionalWeight * directionalColor 
+                    + specularWeight * specularColor
+                    + ptLight1_directionalWeight * ptLight1_directionalColor;
+
+                gl_FragColor = vec4(textureColor.rgb * lightWeighting, textureColor.a);
+            }
+        </script>
 
         <script type="module" src="plyParserV2.js"></script>  
         <script type="module" src="index.js"></script>
@@ -120,6 +195,9 @@
 
     <body onload="AllTheStuff()">
         <div id="controlBox">
+            <input type="checkbox" id="usePerFrag" checked/>
+            <label for="usePerFrag">Use per-frag lighting?</label> <br>
+
             <input type="checkbox" id="model1draw" class="modeldraw" checked/>
             <label for="model1draw">Draw model 1</label>
             <input type="checkbox" id="model1tex" class="modeltex"/>

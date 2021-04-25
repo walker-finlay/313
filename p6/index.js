@@ -1,4 +1,4 @@
-import * as tools from "../lib/toolsv3.js"
+import * as tools from "../lib/toolsv4.js"
 import * as mat3 from "../lib/mat3.js"
 import * as vec3 from "../lib/vec3.js";
 import * as mat4 from "../lib/mat4.js"
@@ -24,12 +24,14 @@ var canvas = document.getElementById("webGLcanvas");
 canvas.width = window.innerWidth-20;
 canvas.height = window.innerHeight-20;
 
+// Program parameters --------------------------------
+let zoom = -35;
+
 // Input handlers stuff ------------------------------
 let mouseclick = false;
 let downCoords = [0, 0];
 let rect = canvas.getBoundingClientRect();
 let delta = [0, 0];
-let zoom = -35;
 
 let sceneRotate = mat4.create();
 let mouseRotate = mat4.create();
@@ -47,6 +49,20 @@ let zlight = document.getElementById('zlight')
 
 let model1tex = document.getElementById('model1tex');
 let model2tex = document.getElementById('model2tex');
+
+let usePerFrag = document.getElementById('usePerFrag');
+let perFragmentLighting = usePerFrag.checked;
+usePerFrag.addEventListener('change', () => {
+    perFragmentLighting = !perFragmentLighting
+
+    if (perFragmentLighting) {
+        shaderProgram = perFragmentProgram;
+    } else {
+        shaderProgram = perVertexProgram;
+    }
+    gl.useProgram(shaderProgram);
+    setUniforms();
+});
 
 model1draw.addEventListener('change', () => {bunny.draw = !bunny.draw;});
 model2draw.addEventListener('change', () => {teapot.draw = !teapot.draw});
@@ -169,14 +185,25 @@ function tryDrawPly(plyObject) {
     }
 }
 
+function setUniforms() {
+    gl.uniform1i(shaderProgram.useLightingUniform, 1);
+    gl.uniform3f(shaderProgram.ambientColorUniform, 0.0, 77/255, 29/255);
+    gl.uniform3f(shaderProgram.lightingDirectionUniform, -1.0, 0.5, 0.5);
+    gl.uniform3f(shaderProgram.directionalColorUniform, 134/255, 6/255, 232/255);
+    gl.uniform3f(shaderProgram.ptLightColorUniform, 1.0, 0.0, 0.0);
+
+    gl.uniform1f(shaderProgram.lightSpecUniform, 0.75);
+    gl.uniform1f(shaderProgram.matSpecUniform, 0.75);
+    gl.uniform1f(shaderProgram.matShineUniform, 30.0);
+}
+
 // ~ Start WebGL ..............................................................
 // Create the GL viewport
 window.gl = tools.initGL(canvas);
 // Load the shaders and buffers into the GPU
-let currentProgram;
-let shaderProgram;
-let perFragmentProgram;
-shaderProgram = tools.initShaders(shaderProgram);
+let perVertexProgram = tools.createProgram('shader-vs', 'shader-fs');
+let perFragmentProgram = tools.createProgram('perfrag-shader-vs', 'perfrag-shader-fs');
+let shaderProgram = perFragmentProgram;
 gl.lineWidth(0.5);
 
 // Stuff that gets drawn ------------------------
@@ -231,8 +258,8 @@ gl.uniform3f(shaderProgram.lightingDirectionUniform, -1.0, 0.5, 0.5);
 gl.uniform3f(shaderProgram.directionalColorUniform, 134/255, 6/255, 232/255);
 gl.uniform3f(shaderProgram.ptLightColorUniform, 1.0, 0.0, 0.0);
 
-gl.uniform1f(shaderProgram.lightSpecUniform, 0.75);
-gl.uniform1f(shaderProgram.matSpecUniform, 0.75);
+gl.uniform1f(shaderProgram.lightSpecUniform, 5.0);
+gl.uniform1f(shaderProgram.matSpecUniform, 5.0);
 gl.uniform1f(shaderProgram.matShineUniform, 30.0);
 
 // gl.enable(gl.SAMPLE_COVERAGE);
