@@ -1,0 +1,10 @@
+#controlBox {
+    color: white;
+    position: fixed;
+    left: 50px;
+    top: 50px;
+}
+
+#webGLcanvas {
+    background-color: blue;
+}
