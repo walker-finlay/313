@@ -258,8 +258,8 @@ gl.uniform3f(shaderProgram.lightingDirectionUniform, -1.0, 0.5, 0.5);
 gl.uniform3f(shaderProgram.directionalColorUniform, 134/255, 6/255, 232/255);
 gl.uniform3f(shaderProgram.ptLightColorUniform, 1.0, 0.0, 0.0);
 
-gl.uniform1f(shaderProgram.lightSpecUniform, 5.0);
-gl.uniform1f(shaderProgram.matSpecUniform, 5.0);
+gl.uniform1f(shaderProgram.lightSpecUniform, 1.0);
+gl.uniform1f(shaderProgram.matSpecUniform, 1.0);
 gl.uniform1f(shaderProgram.matShineUniform, 30.0);
 
 // gl.enable(gl.SAMPLE_COVERAGE);

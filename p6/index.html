@@ -154,9 +154,10 @@
             uniform vec3 uAmbientColor;
             uniform vec3 uLightingDirection;
             uniform vec3 uDirectionalColor;
-            uniform vec3 light_specularity;
-            uniform vec3 material_specularity;
+            uniform float light_specularity;
+            uniform float material_specularity;
             uniform float material_shine;
+            uniform vec3 uPtLightColor;
 
             uniform sampler2D uSampler;
 
@@ -175,15 +176,18 @@
                 float directionalWeight = max(dot(normalize(vTransformedNormal), normalize(uLightingDirection)), 0.0);
                 vec3 reflection = reflect(normalize(uLightingDirection), vTransformedNormal);
                 float specularWeight = pow(max(dot(normalize(reflection),normalize(vPosition)), 0.0), material_shine);
-                vec3 specularColor = light_specularity + material_specularity; // FIXME: Should this maybe be addition maybe?
+                float specularColor = light_specularity * material_specularity; // FIXME: Should this maybe be addition maybe?
                 float ptLight1_directionalWeight = max(dot(vTransformedNormal, normalize(uPtLightPos - vPosition)), 0.0);
-                vec3 ptLight1_directionalColor = vec3(1.0, 0.0, 0.0);
+
+                vec3 ptReflection1 = reflect(normalize(uPtLightPos - vPosition), normalize(vTransformedNormal));
+                float ptSpecWeight = pow(max(dot(normalize(ptReflection1), normalize(vPosition)), 0.0), material_shine);
 
                 vec3 lightWeighting =
                     ambientWeight * uAmbientColor 
-                    + directionalWeight * directionalColor 
+                    + directionalWeight * directionalColor
                     + specularWeight * specularColor
-                    + ptLight1_directionalWeight * ptLight1_directionalColor;
+                    + ptLight1_directionalWeight * uPtLightColor
+                    + ptSpecWeight * specularColor;
 
                 gl_FragColor = vec4(textureColor.rgb * lightWeighting, textureColor.a);
             }
