@@ -69,7 +69,7 @@ gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
 gl.bindBuffer(gl.ARRAY_BUFFER, polarColorBuffer);
 gl.vertexAttribPointer(shaderProgram.vertexColorAttribute,
     polarColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-gl.drawArrays(gl.TRIANGLE_FAN, 0, polarPointBuffer.numItems);
+// gl.drawArrays(gl.TRIANGLE_FAN, 0, polarPointBuffer.numItems);
 
 gl.bindBuffer(gl.ARRAY_BUFFER, starBurstPositionBuffer);
 gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
